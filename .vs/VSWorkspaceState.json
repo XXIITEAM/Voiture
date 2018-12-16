@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Voiture",
+    "\\Voiture\\Lib",
+    "\\Voiture\\Lib\\CarBluetooth",
+    "\\Voiture\\Lib\\MotorDriver"
+  ],
+  "SelectedNode": "\\Voiture\\Voiture.ino",
+  "PreviewInSolutionExplorer": false
+}
