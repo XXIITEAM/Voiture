@@ -25,14 +25,15 @@ CarBluetooth bluetooth(RxD, TxD);
 #define CMD_INVALID     0XFF
 #define CMD_FORWARD     'F'
 #define CMD_RIGHT_FRONT 'R'
-#define CMD_RIGHT_FORWARD 'I'
-#define CMD_LEFT_FORWARD 'G'
-#define CMD_RIGHT_BACK 'J'
-#define CMD_LEFT_BACK 'H'
-#define CMD_BACKWARD    'B'
-
-#define CMD_LEFT_FRONT  'L'
-#define CMD_STOP        'S'
+#define CMD_RIGHT_FORWARD	'I'
+#define CMD_LEFT_FORWARD	'G'
+#define CMD_RIGHT_BACK		'J'
+#define CMD_LEFT_BACK		'H'
+#define CMD_BACKWARD		'B'
+#define CMD_AUTONOME		'A'
+#define CMD_PAUSE			'P'
+#define CMD_LEFT_FRONT		'L'
+#define CMD_STOP			'S'
 
 #define SPEED_STEPS 20
 uint8_t speed0 = 180;
@@ -41,8 +42,10 @@ void setup() {
 	motordriver.init();
 	motordriver.setSpeed(180, MOTORA);
 	motordriver.setSpeed(180, MOTORB);
-	//bluetooth.waitPairable();
-	//bluetooth.waitConnected();
+	bluetooth.waitPairable();
+	Serial.println("pairable");
+	bluetooth.waitConnected();
+	Serial.println("connecte");
 }
 uint8_t bt_command;
 
@@ -55,44 +58,25 @@ uint8_t new_status = car_status;
 void loop() {
 
   scanFrontCenter();
-      count = 0;
-  if(cmMsec > 150){
-      motordriver.goRight();
-      delay(100);
+  count = 0;
+  if (count2 == CYCLES2)
+  {
 
 
-  }
-  if(cmMsec <= 150 && cmMsec >= 50){
-      motordriver.goForward();
-      delay(100);
-
-
-  }
-  if(cmMsec <= 49 && cmMsec >= 30){
-      motordriver.goLeft();
-      delay(1000);
-
-  }
-  if(cmMsec <= 29 && cmMsec >= 1){
-      motordriver.goBackward();
-      delay(1000);
-
-  }
-  count++;
-  //if (count2 == CYCLES2)
-  //{
-
-
-  /*  bt_command = bluetooth.readByte();
+    bt_command = bluetooth.readByte();
   //Serial.println(bt_command);
   if (bt_command != CMD_INVALID) {
     controlCar(bt_command);
+	//if(bt_command != 255){
+		Serial.println(bt_command);
+
+	//}
         count2 = 0;
 
   }
-  //}
-
   
+  }
+ 
   if (bluetooth.getStatus() == PAIRABLE) {
     motordriver.stop();
     bluetooth.waitConnected();
@@ -100,51 +84,76 @@ void loop() {
   count++;
   count2++;
   
-  */
+  
 }
 
-/*
-void controlCar(uint8_t cmd) {
+void autonome() {
+	if (cmMsec > 150) {
+		motordriver.goRight();
+		delay(100);
 
-		switch (cmd)
-		{
-		case CMD_FORWARD:    
-			motordriver.goForward(); 
-			break;
-		case CMD_RIGHT_FORWARD:
-			rightForward();
-			motordriver.goForward();
-			motordriver.setSpeed(speed0, MOTORB);
-			break;
-		case CMD_LEFT_FORWARD:
-			leftForward();
-			motordriver.goForward();
-			motordriver.setSpeed(speed0, MOTORA);
-			break;
-		case CMD_RIGHT_BACK:
-			rightForward();
-			motordriver.goBackward();
-			motordriver.setSpeed(speed0, MOTORB);
-			break;
-		case CMD_LEFT_BACK:
-			leftForward();
-			motordriver.goBackward();
-			motordriver.setSpeed(speed0, MOTORA);
-			break;
-		case CMD_RIGHT_FRONT:
-			//  if(car_status != CAR_STOP)new_status = CAR_FORWARD;
-			motordriver.goRight();
-			// delay(200); 
-			break;
-		case CMD_BACKWARD:    motordriver.goBackward(); break;
-		case CMD_LEFT_FRONT:
-			motordriver.goLeft();
-			// delay(200);
-			break;
-		case CMD_STOP:        motordriver.stop(); break;
-		default: break;
+
 	}
+	if (cmMsec <= 150 && cmMsec >= 50) {
+		motordriver.goForward();
+		delay(100);
 
+
+	}
+	if (cmMsec <= 49 && cmMsec >= 30) {
+		motordriver.goLeft();
+		delay(1000);
+
+	}
+	if (cmMsec <= 29 && cmMsec >= 1) {
+		motordriver.goBackward();
+		delay(1000);
+
+	}
+}
+void controlCar(uint8_t cmd) {
+	Serial.println(bt_command);
+	switch (cmd)
+	{
+	case CMD_FORWARD:
+		motordriver.goForward();
+		break;
+	case CMD_RIGHT_FORWARD:
+		rightForward();
+		motordriver.goForward();
+		motordriver.setSpeed(speed0, MOTORB);
+		break;
+	case CMD_LEFT_FORWARD:
+		leftForward();
+		motordriver.goForward();
+		motordriver.setSpeed(speed0, MOTORA);
+		break;
+	case CMD_RIGHT_BACK:
+		rightForward();
+		motordriver.goBackward();
+		motordriver.setSpeed(speed0, MOTORB);
+		break;
+	case CMD_LEFT_BACK:
+		leftForward();
+		motordriver.goBackward();
+		motordriver.setSpeed(speed0, MOTORA);
+		break;
+	case CMD_RIGHT_FRONT:
+		//  if(car_status != CAR_STOP)new_status = CAR_FORWARD;
+		motordriver.goRight();
+		// delay(200); 
+		break;
+	case CMD_BACKWARD:    motordriver.goBackward(); break;
+	case CMD_LEFT_FRONT:
+		motordriver.goLeft();
+		// delay(200);
+		break;
+	case CMD_AUTONOME: autonome(); break;
+	case CMD_PAUSE:; break;
+	case CMD_STOP:        motordriver.stop(); break;
+	default: break;
+	}
+}
 
 	
 /*if ((cmd >= '0') && (cmd <= '9'))
@@ -166,9 +175,6 @@ void scanFrontCenter() {
   long microsec = ultrasonic.timing();
 
   cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
-    Serial.print(cmMsec);
-   Serial.println(" CM");
-   Serial.println(bt_command);
 }
 /*void speedUp() {
 	if (speed0 < 236)speed0 += SPEED_STEPS;
