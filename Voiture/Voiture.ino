@@ -179,6 +179,7 @@ void autonome() {
 
 		}
 		if (cmMsec <= tab_zone_param[1]-1 && cmMsec >= tab_zone_param[0]) {
+
 			motordriver.goBackward();
 			while (currentMillis - previousMillisTurn < TEMPO_TURN) {
 				currentMillis = millis();
@@ -351,9 +352,6 @@ void traitementOptions(char cmd) {
 				tab_zone_param[i] = icmd;
 				i++;
 				cmdStr = "";
-				/*Serial.println(tab_zone_param[i]);
-				Serial.println(icmd);
-				Serial.println();*/
 			}
 			cmd = bluetooth.readByte();
 		}
@@ -383,12 +381,26 @@ void listingBT() {
 /*..........................................................*/
 void sauvegardeParametres() {
 	os_write.magic = STRUCT_MAGIC;
-	os_write.zone_1_min= tab_zone_param[0];
-	os_write.zone_2_min = 	tab_zone_param[1];
+	os_write.zone_1_min = tab_zone_param[0];
+	os_write.zone_2_min = tab_zone_param[1];
 	os_write.zone_3_min = tab_zone_param[2];
 	os_write.zone_4_min = tab_zone_param[3];
 	os_write.zone_4_max = tab_zone_param[4] ;
 	EEPROM.put(0, os_write);
+	Serial.println("****Sauvegarde Parametres****");
+	Serial.println("Zone 1");
+	Serial.println(tab_zone_param[0]);
+	Serial.println("Zone 2");
+	Serial.println(tab_zone_param[1]);
+	Serial.println("Zone 3");
+	Serial.println(tab_zone_param[2]);
+	Serial.println("Zone 4");
+	Serial.println(tab_zone_param[3]);
+	Serial.println("Zone max");
+	Serial.println(tab_zone_param[4]);
+	Serial.println("****Parametres sauvegardés****");
+	Serial.println();
+
 	return;
 }
 void chargerParametres() {
@@ -408,6 +420,19 @@ void chargerParametres() {
 	updateTableauParam();
 	//Sauvegarde en EEPROM des nouveaux paramètres
 	sauvegardeParametres();
+	Serial.println("****Chargement Parametres****");
+	Serial.println("Zone 1");
+	Serial.println(tab_zone_param[0]);
+	Serial.println("Zone 2");
+	Serial.println(tab_zone_param[1]);
+	Serial.println("Zone 3");
+	Serial.println(tab_zone_param[2]);
+	Serial.println("Zone 4");
+	Serial.println(tab_zone_param[3]);
+	Serial.println("Zone max");
+	Serial.println(tab_zone_param[4]);
+	Serial.println("****Parametres chargés****");
+	Serial.println();
 	return;
 
 }
