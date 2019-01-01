@@ -94,10 +94,10 @@ unsigned long previousMillisBT = 0;
 unsigned long previousMillisDIST = 0;
 unsigned long previousMillisMove = 0;
 unsigned long previousMillisTurn = 0;
-
+unsigned long currentMillis;
 
 void loop() {
-	unsigned long currentMillis = millis();
+	currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 
 		// Garde en m�moire la valeur actuelle de millis()
@@ -105,12 +105,9 @@ void loop() {
 		scanFrontCenter();
 
 	}
-	if (currentMillis - previousMillisBT >= TEMPO_BT) {
-		previousMillisBT = currentMillis;
-		getBluetoothMessage();
-		if (str == "A") {
-			autonome();
-		}
+	getBluetoothMessage();
+	if (str == "A") {
+		autonome();
 	}
 	
 }
@@ -121,17 +118,9 @@ void loop() {
 /*..........................................................*/
 void getBluetoothMessage() {
 	bt_command = Serial3.read();
-  //Serial.println(  Serial3.read());
 	if (bt_command != CMD_INVALID) {
-		traitementMessage(bt_command);
-    Serial.println(bt_command);
-		  
+		traitementMessage(bt_command);		  
 	}
-	/*if (bluetooth.getStatus() == PAIRABLE) {
-		motordriver.stop();
-		bluetooth.waitConnected();
-
-	}*/
 	return;
 
 }
@@ -142,71 +131,68 @@ void getBluetoothMessage() {
 /*..........................................................*/
 /*..........................................................*/
 void autonome() {
-	unsigned long currentMillis = millis();
-
-		if (cmMsec > tab_zone_param[4]) {
+	currentMillis = millis();
+	previousMillisMove = currentMillis;
+	if (cmMsec > tab_zone_param[4]) {
+		while (currentMillis - previousMillisMove < TEMPO_MOVE) {
+			currentMillis = millis();
 			motordriver.goRight();
-			while (currentMillis - previousMillisMove < TEMPO_MOVE) {
-				currentMillis = millis();
-				previousMillisMove = currentMillis;
-			}
 		}
+	}
 
-		if (cmMsec <= tab_zone_param[4] && cmMsec >= tab_zone_param[3]) {
+	if (cmMsec <= tab_zone_param[4] && cmMsec >= tab_zone_param[3]) {
+
+		while (currentMillis - previousMillisMove < TEMPO_MOVE) {
+			currentMillis = millis();
 			motordriver.goForward();
-			while (currentMillis - previousMillisMove < TEMPO_MOVE) {
-				currentMillis = millis();
-				previousMillisMove = currentMillis;
-
-			}
-
 
 		}
-		if (cmMsec <= tab_zone_param[3]-1 && cmMsec >= tab_zone_param[2]) {
+
+
+	}
+	if (cmMsec <= tab_zone_param[3] - 1 && cmMsec >= tab_zone_param[2]) {
+		while (currentMillis - previousMillisMove < TEMPO_MOVE) {
+			currentMillis = millis();
 			motordriver.goForward();
-			while (currentMillis - previousMillisMove < TEMPO_MOVE) {
-				currentMillis = millis();
-				previousMillisMove = currentMillis;
-
-			}
-
 
 		}
-		if (cmMsec <= tab_zone_param[2]-1 && cmMsec >= tab_zone_param[1]) {
+
+
+	}
+	if (cmMsec <= tab_zone_param[2] - 1 && cmMsec >= tab_zone_param[1]) {
+		while (currentMillis - previousMillisTurn < TEMPO_TURN) {
+			currentMillis = millis();
 			motordriver.goLeft();
-			while (currentMillis - previousMillisTurn < TEMPO_TURN) {
-				currentMillis = millis();
-				previousMillisTurn = currentMillis;
-
-			}
 
 		}
-		if (cmMsec <= tab_zone_param[1]-1 && cmMsec >= tab_zone_param[0]) {
 
+	}
+	if (cmMsec <= tab_zone_param[1] - 1 && cmMsec >= tab_zone_param[0]) {
+
+		while (currentMillis - previousMillisTurn < TEMPO_TURN) {
+			currentMillis = millis();
 			motordriver.goBackward();
-			while (currentMillis - previousMillisTurn < TEMPO_TURN) {
-				currentMillis = millis();
-				previousMillisTurn = currentMillis;
-				
-			}
+
 		}
-		if (cmMsec < tab_zone_param[0]) {
+	}
+	if (cmMsec < tab_zone_param[0]) {
+		while (currentMillis - previousMillisTurn < TEMPO_TURN) {
+			currentMillis = millis();
 			motordriver.goBackward();
 		}
 
+	}
 }
 
 int8_t readCommand(char cmd) {
 	char recvChar;
-	char recvChar2;
-	recvChar2 = Serial3.read();
-	//int8_t cmd = 0;
-	while (Serial3.read() == cmd) {
-		//recvChar = Serial3.read();
-			//traitementMessage(recvChar);
-			//return cmd;
-		delay(50);
+	char updateChar;
+	recvChar = cmd;
+	updateChar = Serial3.read();
+	while (recvChar == updateChar) {
+		updateChar = Serial3.read();
 	}
+
 	return;
 }
 /*..........................................................*/
@@ -221,66 +207,46 @@ void traitementMessage(char cmd) {
 	case CMD_FORWARD:
 		motordriver.goForward();
 		readCommand(cmd);
-		Serial3.println("F");
 		break;
 	case CMD_RIGHT_FORWARD:
 		rightForward();
 		motordriver.goForward();
 		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORB);
-		Serial3.println("D");
-
 		break;
 	case CMD_LEFT_FORWARD:
 		leftForward();
 		motordriver.goForward();
 		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORA);
-		Serial3.println("G");
-
 		break;
 	case CMD_RIGHT_BACK:
 		rightForward();
 		motordriver.goBackward();
 		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORB);
-		Serial3.println("F");
-
 		break;
 	case CMD_LEFT_BACK:
 		leftForward();
 		motordriver.goBackward();
 		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORA);
-		Serial3.println("H");
-
-
 		break;
 	case CMD_RIGHT_FRONT:
 		motordriver.goRight();
 		readCommand(cmd);
-		Serial3.println("R");
-
-
 		break;
 	case CMD_BACKWARD:
 		motordriver.goBackward();
 		readCommand(cmd);
-		Serial3.println("B");
-
-
 		break;
 	case CMD_LEFT_FRONT:
 		motordriver.goLeft();
 		readCommand(cmd);
-		Serial3.println("L");
-
 		break;
 	case CMD_STOP:
 		motordriver.stop();
 		str = "S";
-		Serial3.println("S");
-
 		break;
 	case CMD_OPT_DIST:
 		optDist();
@@ -290,7 +256,6 @@ void traitementMessage(char cmd) {
 		break;
 	case CMD_SAVE:
 		sauvegardeParametres();
-		Serial3.println("Q");
 		break;
 	case CMD_GETVALUES:
 		listingBT();
@@ -303,7 +268,6 @@ void traitementMessage(char cmd) {
 	case CMD_AUTONOME:
 		Serial3.println("A");
 		str = "A";
-
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
@@ -411,24 +375,11 @@ void sauvegardeParametres() {
 	os_write.zone_4_min = tab_zone_param[3];
 	os_write.zone_4_max = tab_zone_param[4] ;
 	EEPROM.put(0, os_write);
-	Serial.println("****Sauvegarde Parametres****");
-	Serial.println("Zone 1");
-	Serial.println(tab_zone_param[0]);
-	Serial.println("Zone 2");
-	Serial.println(tab_zone_param[1]);
-	Serial.println("Zone 3");
-	Serial.println(tab_zone_param[2]);
-	Serial.println("Zone 4");
-	Serial.println(tab_zone_param[3]);
-	Serial.println("Zone max");
-	Serial.println(tab_zone_param[4]);
-	Serial.println("****Parametres sauvegard�s****");
-	Serial.println();
-
+	Serial3.println("Q");
 	return;
 }
 void chargerParametres() {
-	EEPROM.get(0, os_write);
+	//EEPROM.get(0, os_write);
 	// Test initialisation de la m�moire
 	byte erreur = os_write.magic != STRUCT_MAGIC;
 	
@@ -444,19 +395,6 @@ void chargerParametres() {
 	updateTableauParam();
 	//Sauvegarde en EEPROM des nouveaux param�tres
 	sauvegardeParametres();
-	Serial.println("****Chargement Parametres****");
-	Serial.println("Zone 1");
-	Serial.println(tab_zone_param[0]);
-	Serial.println("Zone 2");
-	Serial.println(tab_zone_param[1]);
-	Serial.println("Zone 3");
-	Serial.println(tab_zone_param[2]);
-	Serial.println("Zone 4");
-	Serial.println(tab_zone_param[3]);
-	Serial.println("Zone max");
-	Serial.println(tab_zone_param[4]);
-	Serial.println("****Parametres charg�s****");
-	Serial.println();
 	return;
 
 }
