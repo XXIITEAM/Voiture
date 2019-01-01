@@ -379,17 +379,17 @@ void sauvegardeParametres() {
 	return;
 }
 void chargerParametres() {
-	//EEPROM.get(0, os_write);
+	EEPROM.get(0, os_write);
 	// Test initialisation de la m�moire
 	byte erreur = os_write.magic != STRUCT_MAGIC;
 	
 	// Si erreur on attribue des valeurs par d�faut
 	if (erreur) {
-		os_write.zone_1_min = 1;
-		os_write.zone_2_min = 2;
-		os_write.zone_3_min = 3;
-		os_write.zone_4_min = 4;
-		os_write.zone_4_max = 5;
+		os_write.zone_1_min = 10;
+		os_write.zone_2_min = 30;
+		os_write.zone_3_min = 50;
+		os_write.zone_4_min = 70;
+		os_write.zone_4_max = 100;
 	}
 	// Mise � jour du tableau de param�tres
 	updateTableauParam();
