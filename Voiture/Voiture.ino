@@ -260,12 +260,13 @@ void optDist() {
 //Traite les param�tres de zones envoy�s par le client
 void traitementOptions(char cmd) {
 	String cmdStr = "";
+	char param = cmd;
 	char cmd1[5];
 	int icmd;
 	int i = 0;
-	while (cmd != STOP_CMD) {
-		if (cmd == CMD_WRITE) {
-			cmd = Serial3.read();
+	while (param != STOP_CMD) {
+		if (param == CMD_WRITE) {
+			param = Serial3.read();
 		}
 		else if (cmd == CMD_DELIM) {
 			if (cmdStr != "") {
@@ -274,11 +275,11 @@ void traitementOptions(char cmd) {
 				i++;
 				cmdStr = "";
 			}
-			cmd = Serial3.read();
+			param = Serial3.read();
 		}
 		else {
 			cmdStr += cmd;
-			cmd = Serial3.read();
+			param = Serial3.read();
 		}
 	}
 	Serial3.println("W");
@@ -316,6 +317,7 @@ void chargerParametres() {
 	
 	// Si erreur on attribue des valeurs par d�faut
 	if (erreur) {
+		os_write.magic = STRUCT_MAGIC;
 		os_write.zone_1_min = 10;
 		os_write.zone_2_min = 30;
 		os_write.zone_3_min = 50;
