@@ -160,8 +160,12 @@ void traitementMessage(char commande_a_traiter) {
 	switch (commande_a_traiter)
 	{
 	case CMD_FORWARD:
-		motordriver.goForward();
-		delay(100);
+		
+		previousMillisDIST = millis();
+		while (currentMillis - previousMillisDIST >= TEMPO_MOVE) {
+			currentMillis = millis();
+			motordriver.goForward();
+		}
 		break;
 	case CMD_RIGHT_FORWARD:
 		motordriver.goForward();
