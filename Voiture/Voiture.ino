@@ -82,6 +82,7 @@ void loop() {
 	if (commande_recue != CMD_INVALID) {
 		if (commande_precedente == NULL) {
 			commande_precedente = commande_recue;
+			traitementMessage(commande_recue);
 		}
 		else if (commande_recue != commande_precedente) {
 			commande_precedente = commande_recue;
