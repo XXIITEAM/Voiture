@@ -1,10 +1,10 @@
 //test 1:2015.08.15
-#include <car_bluetooth.h>
-#include <SoftwareSerial.h>   //Software Serial Port
+//#include <car_bluetooth.h>
+//#include <SoftwareSerial.h>   //Software Serial Port
 #include <String.h>
 #include <MotorDriver.h>
 #include <stdlib.h>
-#include <eeprom.h>
+#include <EEPROM.h>
 
 #include <Ultrasonic.h>
 
@@ -19,9 +19,10 @@ int count = 0;
 int count2 = 0;
 bool test;
 float cmMsec;
-#define RxD 2
-#define TxD 4
-CarBluetooth bluetooth(RxD, TxD);
+#define RxD 14
+#define TxD 15
+//CarBluetooth bluetooth(RxD, TxD);
+
 #define CMD_INVALID     0xFF
 #define CMD_FORWARD     'F'
 #define CMD_RIGHT_FRONT 'R'
@@ -43,7 +44,7 @@ CarBluetooth bluetooth(RxD, TxD);
 #define SPEED_STEPS 20
 uint8_t speed0 = 180;
 static const unsigned long STRUCT_MAGIC = 22;
-
+//bluetooth = Serial3;
 
 struct optionStruct {
 	unsigned long magic;
@@ -57,14 +58,16 @@ struct optionStruct {
 void setup() {
 	
 	Serial.begin(9600);
+	Serial3.begin(9600);
 	motordriver.init();
 	motordriver.setSpeed(180, MOTORA);
 	motordriver.setSpeed(180, MOTORB);
 	chargerParametres();
-	bluetooth.waitPairable();
+	//bluetooth.waitPairable();
+	
 	Serial.println("pairable");
 	Serial.println("*------------------------------*");
-	bluetooth.waitConnected();
+	//bluetooth.waitConnected();
 	Serial.println("connecte");
 	Serial.println("*------------------------------*");
 	
@@ -83,9 +86,9 @@ optionStruct os_write;
 // Tempo
 const unsigned long TEMPO_DIST = 200;
 const unsigned long TEMPO_BT = 50;
-const unsigned long TEMPO_MOVE = 100;
+const unsigned long TEMPO_MOVE = 200;
 const unsigned long TEMPO_TURN = 500;
-// Précédente valeur de millis() Tempo
+// Prï¿½cï¿½dente valeur de millis() Tempo
 unsigned long previousMillisBT = 0;
 
 unsigned long previousMillisDIST = 0;
@@ -94,12 +97,10 @@ unsigned long previousMillisTurn = 0;
 
 
 void loop() {
-
-
 	unsigned long currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 
-		// Garde en mémoire la valeur actuelle de millis()
+		// Garde en mï¿½moire la valeur actuelle de millis()
 		previousMillisDIST = currentMillis;
 		scanFrontCenter();
 
@@ -119,16 +120,18 @@ void loop() {
 /*..........................................................*/
 /*..........................................................*/
 void getBluetoothMessage() {
-	bt_command = bluetooth.readByte();
+	bt_command = Serial3.read();
+  //Serial.println(  Serial3.read());
 	if (bt_command != CMD_INVALID) {
 		traitementMessage(bt_command);
-		
+    Serial.println(bt_command);
+		  
 	}
-	if (bluetooth.getStatus() == PAIRABLE) {
+	/*if (bluetooth.getStatus() == PAIRABLE) {
 		motordriver.stop();
 		bluetooth.waitConnected();
 
-	}
+	}*/
 	return;
 
 }
@@ -193,69 +196,90 @@ void autonome() {
 
 }
 
-
+int8_t readCommand(char cmd) {
+	char recvChar;
+	char recvChar2;
+	recvChar2 = Serial3.read();
+	//int8_t cmd = 0;
+	while (Serial3.read() == cmd) {
+		//recvChar = Serial3.read();
+			//traitementMessage(recvChar);
+			//return cmd;
+		delay(50);
+	}
+	return;
+}
 /*..........................................................*/
 /*..........................................................*/
 /*					TRAITEMENT COMMANDE						*/
 /*..........................................................*/
 /*..........................................................*/
-void traitementMessage(uint8_t cmd) {
+void traitementMessage(char cmd) {
 	switch (cmd)
 	{
+		Serial3.println("O");
 	case CMD_FORWARD:
 		motordriver.goForward();
-		bluetooth.writeAT("F");
+		readCommand(cmd);
+		Serial3.println("F");
 		break;
 	case CMD_RIGHT_FORWARD:
 		rightForward();
 		motordriver.goForward();
+		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORB);
-		bluetooth.writeAT("D");
+		Serial3.println("D");
 
 		break;
 	case CMD_LEFT_FORWARD:
 		leftForward();
 		motordriver.goForward();
+		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORA);
-		bluetooth.writeAT("G");
+		Serial3.println("G");
 
 		break;
 	case CMD_RIGHT_BACK:
 		rightForward();
 		motordriver.goBackward();
+		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORB);
-		bluetooth.writeAT("F");
+		Serial3.println("F");
 
 		break;
 	case CMD_LEFT_BACK:
 		leftForward();
 		motordriver.goBackward();
+		readCommand(cmd);
 		motordriver.setSpeed(speed0, MOTORA);
-		bluetooth.writeAT("H");
+		Serial3.println("H");
 
 
 		break;
 	case CMD_RIGHT_FRONT:
 		motordriver.goRight();
-		bluetooth.writeAT("R");
+		readCommand(cmd);
+		Serial3.println("R");
 
 
 		break;
 	case CMD_BACKWARD:
 		motordriver.goBackward();
-		bluetooth.writeAT("B");
+		readCommand(cmd);
+		Serial3.println("B");
 
 
 		break;
 	case CMD_LEFT_FRONT:
 		motordriver.goLeft();
-		bluetooth.writeAT("L");
+		readCommand(cmd);
+		Serial3.println("L");
 
 		break;
 	case CMD_STOP:
 		motordriver.stop();
 		str = "S";
-		bluetooth.writeAT("S");
+		Serial3.println("S");
 
 		break;
 	case CMD_OPT_DIST:
@@ -266,7 +290,7 @@ void traitementMessage(uint8_t cmd) {
 		break;
 	case CMD_SAVE:
 		sauvegardeParametres();
-		bluetooth.writeAT("Q");
+		Serial3.println("Q");
 		break;
 	case CMD_GETVALUES:
 		listingBT();
@@ -277,14 +301,14 @@ void traitementMessage(uint8_t cmd) {
 
 		break;
 	case CMD_AUTONOME:
-		bluetooth.writeAT("A");
+		Serial3.println("A");
 		str = "A";
 
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
 		str = "M";
-		bluetooth.writeAT("M");
+		Serial3.println("M");
 
 		break;
 	default: break;
@@ -321,7 +345,7 @@ void leftForward() {
 /*					PARAMETRAGE ZONES						*/
 /*..........................................................*/
 /*..........................................................*/
-//Envoi des paramètres (Distances zones) à l'application android
+//Envoi des paramï¿½tres (Distances zones) ï¿½ l'application android
 void optDist() {
 	chargerParametres();
 	String str_list_zone;
@@ -332,11 +356,11 @@ void optDist() {
 	}
 	str_list_zone += "X";
 
-	bluetooth.writeAT(str_list_zone);
+	Serial3.println(str_list_zone);
 	return;
 
 }
-//Traite les paramètres de zones envoyés par le client
+//Traite les paramï¿½tres de zones envoyï¿½s par le client
 void traitementOptions(char cmd) {
 	String cmdStr = "";
 	char cmd1[5];
@@ -344,7 +368,7 @@ void traitementOptions(char cmd) {
 	int i = 0;
 	while (cmd != STOP_CMD) {
 		if (cmd == CMD_WRITE) {
-			cmd = bluetooth.readByte();
+			cmd = Serial3.read();
 		}
 		else if (cmd == CMD_DELIM) {
 			if (cmdStr != "") {
@@ -353,14 +377,14 @@ void traitementOptions(char cmd) {
 				i++;
 				cmdStr = "";
 			}
-			cmd = bluetooth.readByte();
+			cmd = Serial3.read();
 		}
 		else {
 			cmdStr += cmd;
-			cmd = bluetooth.readByte();
+			cmd = Serial3.read();
 		}
 	}
-	bluetooth.writeAT("W");
+	Serial3.println("W");
 	return;
 }
 /*..........................................................*/
@@ -370,8 +394,8 @@ void traitementOptions(char cmd) {
 /*..........................................................*/
 void listingBT() {
 	distance = String(cmMsec);
-	String list = ("Z" "/" "Distance : " + distance + "/" + "Température : " + "21.02" + "/" + "Température : " + "21.02" + "/" + "Température : " + "21.02" + "/" + "Température : " + "21.02" + "/" + "Température : " + "21.02");
-	bluetooth.writeAT(list);
+	String list = ("Z" "/" "Distance : " + distance + "/" + "Tempï¿½rature : " + "21.02" + "/" + "Tempï¿½rature : " + "21.02" + "/" + "Tempï¿½rature : " + "21.02" + "/" + "Tempï¿½rature : " + "21.02" + "/" + "Tempï¿½rature : " + "21.02");
+	Serial3.println(list);
 	return;
 }
 /*..........................................................*/
@@ -398,17 +422,17 @@ void sauvegardeParametres() {
 	Serial.println(tab_zone_param[3]);
 	Serial.println("Zone max");
 	Serial.println(tab_zone_param[4]);
-	Serial.println("****Parametres sauvegardés****");
+	Serial.println("****Parametres sauvegardï¿½s****");
 	Serial.println();
 
 	return;
 }
 void chargerParametres() {
 	EEPROM.get(0, os_write);
-	// Test initialisation de la mémoire
+	// Test initialisation de la mï¿½moire
 	byte erreur = os_write.magic != STRUCT_MAGIC;
 	
-	// Si erreur on attribue des valeurs par défaut
+	// Si erreur on attribue des valeurs par dï¿½faut
 	if (erreur) {
 		os_write.zone_1_min = 1;
 		os_write.zone_2_min = 2;
@@ -416,9 +440,9 @@ void chargerParametres() {
 		os_write.zone_4_min = 4;
 		os_write.zone_4_max = 5;
 	}
-	// Mise à jour du tableau de paramètres
+	// Mise ï¿½ jour du tableau de paramï¿½tres
 	updateTableauParam();
-	//Sauvegarde en EEPROM des nouveaux paramètres
+	//Sauvegarde en EEPROM des nouveaux paramï¿½tres
 	sauvegardeParametres();
 	Serial.println("****Chargement Parametres****");
 	Serial.println("Zone 1");
@@ -431,7 +455,7 @@ void chargerParametres() {
 	Serial.println(tab_zone_param[3]);
 	Serial.println("Zone max");
 	Serial.println(tab_zone_param[4]);
-	Serial.println("****Parametres chargés****");
+	Serial.println("****Parametres chargï¿½s****");
 	Serial.println();
 	return;
 

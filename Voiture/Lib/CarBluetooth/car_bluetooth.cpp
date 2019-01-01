@@ -4,7 +4,7 @@ CarBluetooth::CarBluetooth(int rx, int tx): bluetoothSerial(rx,tx){
   s_connecting = "CONNECTING";
   s_connected  = "CONNECTED";
   status = 0;
-  bluetoothSerial.begin(9600);
+  Serial3.begin(9600);
 }
 
 void CarBluetooth::waitConnected(){
@@ -48,7 +48,7 @@ void CarBluetooth::waitPairable(){
 	while(status != PAIRABLE){
 	  if(bluetoothSerial.available()){
 		recvChar = bluetoothSerial.read();
-		Serial.write(recvChar);
+		Serial.println(recvChar);
 		if(recvChar == '+'){
 		  while(bluetoothSerial.available() == 0);
 		  recvChar = bluetoothSerial.read();
@@ -125,6 +125,7 @@ int8_t CarBluetooth::readCommand(){
   int8_t cmd=0;
   while(bluetoothSerial.available()){
     recvChar = bluetoothSerial.read();
+	Serial.println(recvChar);
 	if(recvChar == 0x30){
 	  recvChar = bluetoothSerial.read();
 	  switch(recvChar){
