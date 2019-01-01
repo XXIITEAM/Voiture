@@ -63,14 +63,6 @@ void setup() {
 	motordriver.setSpeed(180, MOTORA);
 	motordriver.setSpeed(180, MOTORB);
 	chargerParametres();
-	//bluetooth.waitPairable();
-	
-	Serial.println("pairable");
-	Serial.println("*------------------------------*");
-	//bluetooth.waitConnected();
-	Serial.println("connecte");
-	Serial.println("*------------------------------*");
-	
 
 }
 uint8_t bt_command;
@@ -106,10 +98,7 @@ void loop() {
 		scanFrontCenter();
 
 	}
-	if (currentMillis - previousMillisDIST >= TEMPO_BT) {
-		previousMillisDIST = currentMillis;
-		getBluetoothMessage();
-	}
+	getBluetoothMessage();
 	if (str == "A") {
 		autonome();
 	}

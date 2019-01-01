@@ -112,6 +112,7 @@ bool CarBluetooth::writeAT(String cmd){
   }
   else return false;
 }
+
 bool CarBluetooth::testAT(){
   clearBuffer();
   return writeAT("AT");
