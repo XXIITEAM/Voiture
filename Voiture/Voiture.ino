@@ -217,7 +217,7 @@ int8_t readCommand(char cmd) {
 void traitementMessage(char cmd) {
 	switch (cmd)
 	{
-		Serial3.println("O");
+		//Serial3.println("O");
 	case CMD_FORWARD:
 		motordriver.goForward();
 		readCommand(cmd);
