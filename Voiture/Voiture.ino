@@ -32,7 +32,7 @@ Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 #define CMD_SAVE			'Q'
 #define SPEED_STEPS 20
 //Définition vitesse
-uint8_t speed0 = 180;
+uint8_t speed0 = 220;
 //Définition STRUCT_MAGIC (test data)
 static const unsigned long STRUCT_MAGIC = 22;
 int tab_zone_param[5];
@@ -77,18 +77,28 @@ unsigned long currentMillis;
 void loop() {
 	
 	char commande_recue = getBluetoothMessage();
+	char commande_precedente;
+	float cmMsec;
 	if (commande_recue != CMD_INVALID) {
+		if (commande_precedente == NULL) {
+			commande_precedente = commande_recue;
+		}
+		else if (commande_recue == commande_precedente) {
+			commande_precedente = commande_recue;
+			return;
+		}
+	
 		traitementMessage(commande_recue);
 	}
+	
 	currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 		previousMillisDIST = currentMillis;
-		scanFrontCenter();
-
+		cmMsec = scanFrontCenter();
 	}
 	
 	if (mode == "A") {
-		autonome();
+		autonome(cmMsec);
 	}
 }
 /*..........................................................*/
@@ -107,34 +117,34 @@ char getBluetoothMessage() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
-void autonome() {
-	float cmMsec = scanFrontCenter();
-	if (cmMsec >= tab_zone_param[4]) {
+void autonome(float distance_front) {
+	
+	if (distance_front >= tab_zone_param[4]) {
 			motordriver.goRight();
 			delay(TEMPO_MOVE);
 	}
 
-	if (cmMsec < tab_zone_param[4] && cmMsec >= tab_zone_param[3]) {
+	if (distance_front < tab_zone_param[4] && distance_front >= tab_zone_param[3]) {
 			motordriver.goForward();
 			delay(TEMPO_MOVE);
 
 	}
-	if (cmMsec < tab_zone_param[3] && cmMsec >= tab_zone_param[2]) {
+	if (distance_front < tab_zone_param[3] && distance_front >= tab_zone_param[2]) {
 			motordriver.goForward();
 			delay(TEMPO_MOVE);
 
 	}
-	if (cmMsec < tab_zone_param[2] && cmMsec >= tab_zone_param[1]) {
+	if (distance_front < tab_zone_param[2] && distance_front >= tab_zone_param[1]) {
 			motordriver.goLeft();
 			delay(TEMPO_MOVE);
 
 	}
-	if (cmMsec < tab_zone_param[1] && cmMsec >= tab_zone_param[0]) {
+	if (distance_front < tab_zone_param[1] && distance_front >= tab_zone_param[0]) {
 			motordriver.goBackward();
 			delay(TEMPO_MOVE);
 
 	}
-	if (cmMsec < tab_zone_param[0]) {
+	if (distance_front < tab_zone_param[0]) {
 			motordriver.goBackward();
 			delay(TEMPO_MOVE);
 
