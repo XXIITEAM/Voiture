@@ -83,12 +83,11 @@ void loop() {
 		if (commande_precedente == NULL) {
 			commande_precedente = commande_recue;
 		}
-		else if (commande_recue == commande_precedente) {
+		else if (commande_recue != commande_precedente) {
 			commande_precedente = commande_recue;
-			return;
+			traitementMessage(commande_recue);
+
 		}
-	
-		traitementMessage(commande_recue);
 	}
 	
 	currentMillis = millis();
