@@ -131,6 +131,7 @@ void getBluetoothMessage() {
 /*..........................................................*/
 /*..........................................................*/
 void autonome() {
+	scanFrontCenter();
 	currentMillis = millis();
 	previousMillisMove = currentMillis;
 	if (cmMsec > tab_zone_param[4]) {
@@ -400,7 +401,6 @@ void chargerParametres() {
 }
 void updateTableauParam() {
 	tab_zone_param[0] = os_write.zone_1_min;
-	Serial.println(os_write.zone_1_min);
 	tab_zone_param[1] = os_write.zone_2_min;
 	tab_zone_param[2] = os_write.zone_3_min;
 	tab_zone_param[3] = os_write.zone_4_min;
