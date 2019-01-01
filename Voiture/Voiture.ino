@@ -7,23 +7,12 @@
 #include <EEPROM.h>
 
 #include <Ultrasonic.h>
-
-#define TRIGGER_PIN  5//connect Trip of the Ultrasonic Sensor moudle to D5 of Arduino 
-//and can be changed to other ports
+//Définition capteur_front_center
+#define TRIGGER_PIN  5
 #define ECHO_PIN     3
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
-// Only run 50 time so we can reburn the code easily.
-int CYCLES = 200;
-int CYCLES2 = 3;
-int count = 0;
-int count2 = 0;
-bool test;
-float cmMsec;
-#define RxD 14
-#define TxD 15
-//CarBluetooth bluetooth(RxD, TxD);
-
-#define CMD_INVALID     0xFF
+//Définition des commandes
+#define CMD_INVALID     '255'
 #define CMD_FORWARD     'F'
 #define CMD_RIGHT_FRONT 'R'
 #define CMD_RIGHT_FORWARD	'D'
@@ -42,9 +31,11 @@ float cmMsec;
 #define CMD_DELIM			'/'
 #define CMD_SAVE			'Q'
 #define SPEED_STEPS 20
+//Définition vitesse
 uint8_t speed0 = 180;
+//Définition STRUCT_MAGIC (test data)
 static const unsigned long STRUCT_MAGIC = 22;
-//bluetooth = Serial3;
+int tab_zone_param[5];
 
 struct optionStruct {
 	unsigned long magic;
@@ -56,24 +47,19 @@ struct optionStruct {
 };
 
 void setup() {
-	
 	Serial.begin(9600);
 	Serial3.begin(9600);
 	motordriver.init();
 	motordriver.setSpeed(180, MOTORA);
 	motordriver.setSpeed(180, MOTORB);
 	chargerParametres();
-
 }
-uint8_t bt_command;
-String distance = "";
 #define CAR_STOP 0
 #define CAR_FORWARD 1
 #define CAR_BACK 2
 uint8_t car_status = CAR_STOP;
 uint8_t new_status = car_status;
-String str = "M";
-int tab_zone_param[5];
+String mode = "M";
 optionStruct os_write;
 // Tempo
 const unsigned long TEMPO_DIST = 500;
@@ -89,32 +75,30 @@ unsigned long previousMillisTurn = 0;
 unsigned long currentMillis;
 
 void loop() {
-	currentMillis = millis();
-
-	// Garde en m�moire la valeur actuelle de millis()
 	
+	char commande_recue = getBluetoothMessage();
+	if (commande_recue != CMD_INVALID) {
+		traitementMessage(commande_recue);
+	}
+	currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 		previousMillisDIST = currentMillis;
 		scanFrontCenter();
 
 	}
-	getBluetoothMessage();
-	if (str == "A") {
+	
+	if (mode == "A") {
 		autonome();
 	}
-	
 }
 /*..........................................................*/
 /*..........................................................*/
 /*					BOUCLE RECEPTION BT						*/
 /*..........................................................*/
 /*..........................................................*/
-void getBluetoothMessage() {
-	bt_command = Serial3.read();
-	if (bt_command != CMD_INVALID) {
-		traitementMessage(bt_command);		  
-	}
-	return;
+char getBluetoothMessage() {
+	char bt_command = Serial3.read();
+	return bt_command;
 
 }
 
@@ -124,26 +108,37 @@ void getBluetoothMessage() {
 /*..........................................................*/
 /*..........................................................*/
 void autonome() {
-	if (cmMsec > tab_zone_param[4]) {
+	float cmMsec = scanFrontCenter();
+	if (cmMsec >= tab_zone_param[4]) {
 			motordriver.goRight();
+			delay(TEMPO_MOVE);
 	}
 
-	if (cmMsec <= tab_zone_param[4] && cmMsec >= tab_zone_param[3]) {
+	if (cmMsec < tab_zone_param[4] && cmMsec >= tab_zone_param[3]) {
 			motordriver.goForward();
+			delay(TEMPO_MOVE);
+
 	}
-	if (cmMsec <= tab_zone_param[3] - 1 && cmMsec >= tab_zone_param[2]) {
+	if (cmMsec < tab_zone_param[3] && cmMsec >= tab_zone_param[2]) {
 			motordriver.goForward();
+			delay(TEMPO_MOVE);
+
 	}
-	if (cmMsec <= tab_zone_param[2] - 1 && cmMsec >= tab_zone_param[1]) {
+	if (cmMsec < tab_zone_param[2] && cmMsec >= tab_zone_param[1]) {
 			motordriver.goLeft();
+			delay(TEMPO_MOVE);
+
 	}
-	if (cmMsec <= tab_zone_param[1] - 1 && cmMsec >= tab_zone_param[0]) {
+	if (cmMsec < tab_zone_param[1] && cmMsec >= tab_zone_param[0]) {
 			motordriver.goBackward();
+			delay(TEMPO_MOVE);
+
 	}
 	if (cmMsec < tab_zone_param[0]) {
 			motordriver.goBackward();
+			delay(TEMPO_MOVE);
+
 	}
-	scanFrontCenter();
 
 }
 /*..........................................................*/
@@ -151,10 +146,9 @@ void autonome() {
 /*					TRAITEMENT COMMANDE						*/
 /*..........................................................*/
 /*..........................................................*/
-void traitementMessage(char cmd) {
-	switch (cmd)
+void traitementMessage(char commande_a_traiter) {
+	switch (commande_a_traiter)
 	{
-		//Serial3.println("O");
 	case CMD_FORWARD:
 		motordriver.goForward();
 		break;
@@ -189,13 +183,12 @@ void traitementMessage(char cmd) {
 		break;
 	case CMD_STOP:
 		motordriver.stop();
-		str = "S";
 		break;
 	case CMD_OPT_DIST:
 		optDist();
 		break;
 	case CMD_WRITE:
-		traitementOptions(bt_command);
+		traitementOptions(commande_a_traiter);
 		break;
 	case CMD_SAVE:
 		sauvegardeParametres();
@@ -210,28 +203,26 @@ void traitementMessage(char cmd) {
 		break;
 	case CMD_AUTONOME:
 		Serial3.println("A");
-		str = "A";
+		mode = "A";
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
-		str = "M";
+		mode = "M";
 		Serial3.println("M");
 
 		break;
 	default: break;
 	}
-	return;
-
 }
 /*..........................................................*/
 /*..........................................................*/
 /*					SCAN US FRONT							*/
 /*..........................................................*/
 /*..........................................................*/
-void scanFrontCenter() {
+float scanFrontCenter() {
   long microsec = ultrasonic.timing();
-  cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
-  return;
+  float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
+  return distance;
 }
 
 void rightForward() {
@@ -291,7 +282,6 @@ void traitementOptions(char cmd) {
 		}
 	}
 	Serial3.println("W");
-	return;
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -299,10 +289,10 @@ void traitementOptions(char cmd) {
 /*..........................................................*/
 /*..........................................................*/
 void listingBT() {
-	distance = String(cmMsec);
+	float cmMsec = scanFrontCenter();
+	String distance = String(cmMsec);
 	String list = ("Z" "/" "Distance : " + distance + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02");
 	Serial3.println(list);
-	return;
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -318,7 +308,6 @@ void sauvegardeParametres() {
 	os_write.zone_4_max = tab_zone_param[4] ;
 	EEPROM.put(0, os_write);
 	Serial3.println("Q");
-	return;
 }
 void chargerParametres() {
 	EEPROM.get(0, os_write);
@@ -335,10 +324,6 @@ void chargerParametres() {
 	}
 	// Mise � jour du tableau de param�tres
 	updateTableauParam();
-	//Sauvegarde en EEPROM des nouveaux param�tres
-	sauvegardeParametres();
-	return;
-
 }
 void updateTableauParam() {
 	tab_zone_param[0] = os_write.zone_1_min;
@@ -346,6 +331,5 @@ void updateTableauParam() {
 	tab_zone_param[2] = os_write.zone_3_min;
 	tab_zone_param[3] = os_write.zone_4_min;
 	tab_zone_param[4] = os_write.zone_4_max;
-	return;
 }
 	
