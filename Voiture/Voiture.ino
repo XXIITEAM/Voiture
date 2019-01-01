@@ -84,8 +84,8 @@ String str = "M";
 int tab_zone_param[5];
 optionStruct os_write;
 // Tempo
-const unsigned long TEMPO_DIST = 200;
-const unsigned long TEMPO_BT = 50;
+const unsigned long TEMPO_DIST = 500;
+const unsigned long TEMPO_BT = 10;
 const unsigned long TEMPO_MOVE = 200;
 const unsigned long TEMPO_TURN = 500;
 // Pr�c�dente valeur de millis() Tempo
@@ -98,14 +98,18 @@ unsigned long currentMillis;
 
 void loop() {
 	currentMillis = millis();
-	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 
-		// Garde en m�moire la valeur actuelle de millis()
+	// Garde en m�moire la valeur actuelle de millis()
+	
+	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 		previousMillisDIST = currentMillis;
 		scanFrontCenter();
 
 	}
-	getBluetoothMessage();
+	if (currentMillis - previousMillisDIST >= TEMPO_BT) {
+		previousMillisDIST = currentMillis;
+		getBluetoothMessage();
+	}
 	if (str == "A") {
 		autonome();
 	}
@@ -131,70 +135,27 @@ void getBluetoothMessage() {
 /*..........................................................*/
 /*..........................................................*/
 void autonome() {
-	scanFrontCenter();
-	currentMillis = millis();
-	previousMillisMove = currentMillis;
 	if (cmMsec > tab_zone_param[4]) {
-		while (currentMillis - previousMillisMove < TEMPO_MOVE) {
-			currentMillis = millis();
 			motordriver.goRight();
-		}
 	}
 
 	if (cmMsec <= tab_zone_param[4] && cmMsec >= tab_zone_param[3]) {
-
-		while (currentMillis - previousMillisMove < TEMPO_MOVE) {
-			currentMillis = millis();
 			motordriver.goForward();
-
-		}
-
-
 	}
 	if (cmMsec <= tab_zone_param[3] - 1 && cmMsec >= tab_zone_param[2]) {
-		while (currentMillis - previousMillisMove < TEMPO_MOVE) {
-			currentMillis = millis();
 			motordriver.goForward();
-
-		}
-
-
 	}
 	if (cmMsec <= tab_zone_param[2] - 1 && cmMsec >= tab_zone_param[1]) {
-		while (currentMillis - previousMillisTurn < TEMPO_TURN) {
-			currentMillis = millis();
 			motordriver.goLeft();
-
-		}
-
 	}
 	if (cmMsec <= tab_zone_param[1] - 1 && cmMsec >= tab_zone_param[0]) {
-
-		while (currentMillis - previousMillisTurn < TEMPO_TURN) {
-			currentMillis = millis();
 			motordriver.goBackward();
-
-		}
 	}
 	if (cmMsec < tab_zone_param[0]) {
-		while (currentMillis - previousMillisTurn < TEMPO_TURN) {
-			currentMillis = millis();
 			motordriver.goBackward();
-		}
-
 	}
-}
+	scanFrontCenter();
 
-int8_t readCommand(char cmd) {
-	char recvChar;
-	char updateChar;
-	recvChar = cmd;
-	updateChar = Serial3.read();
-	while (recvChar == updateChar) {
-		updateChar = Serial3.read();
-	}
-
-	return;
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -207,43 +168,35 @@ void traitementMessage(char cmd) {
 		//Serial3.println("O");
 	case CMD_FORWARD:
 		motordriver.goForward();
-		readCommand(cmd);
 		break;
 	case CMD_RIGHT_FORWARD:
-		rightForward();
 		motordriver.goForward();
-		readCommand(cmd);
+		rightForward();
 		motordriver.setSpeed(speed0, MOTORB);
 		break;
 	case CMD_LEFT_FORWARD:
-		leftForward();
 		motordriver.goForward();
-		readCommand(cmd);
+		leftForward();
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_BACK:
-		rightForward();
 		motordriver.goBackward();
-		readCommand(cmd);
+		rightForward();
 		motordriver.setSpeed(speed0, MOTORB);
 		break;
 	case CMD_LEFT_BACK:
-		leftForward();
 		motordriver.goBackward();
-		readCommand(cmd);
+		leftForward();
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_FRONT:
 		motordriver.goRight();
-		readCommand(cmd);
 		break;
 	case CMD_BACKWARD:
 		motordriver.goBackward();
-		readCommand(cmd);
 		break;
 	case CMD_LEFT_FRONT:
 		motordriver.goLeft();
-		readCommand(cmd);
 		break;
 	case CMD_STOP:
 		motordriver.stop();
@@ -290,7 +243,6 @@ void scanFrontCenter() {
   long microsec = ultrasonic.timing();
   cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
   return;
-
 }
 
 void rightForward() {
