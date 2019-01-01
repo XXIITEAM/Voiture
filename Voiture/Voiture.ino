@@ -406,6 +406,5 @@ void updateTableauParam() {
 	tab_zone_param[3] = os_write.zone_4_min;
 	tab_zone_param[4] = os_write.zone_4_max;
 	return;
-
 }
 	
