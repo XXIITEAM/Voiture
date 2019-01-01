@@ -36,3 +36,11 @@
 Voiture/__vm/Compile.vmps.xml
 *.xml
 *.xml
+*.xml
+*.buildinfo
+*.elf
+*.hex
+*.elf
+*.hex
+*.hex
+*.hex
