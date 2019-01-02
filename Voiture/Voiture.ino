@@ -12,7 +12,15 @@
 #define ECHO_PIN     3
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 //Définition des commandes
-#define CMD_INVALID     '255'
+//BT
+#define INITIALIZING 0
+#define READY        1
+#define INQUIRING    2
+#define PAIRABLE     3
+#define CONNECTING   4
+#define CONNECTED    5
+//CMD
+#define CMD_INVALID     0XFF
 #define CMD_FORWARD     'F'
 #define CMD_RIGHT_FRONT 'R'
 #define CMD_RIGHT_FORWARD	'D'
@@ -36,7 +44,9 @@ uint8_t speed0 = 220;
 //Définition STRUCT_MAGIC (test data)
 static const unsigned long STRUCT_MAGIC = 22;
 int tab_zone_param[5];
-
+int8_t status;
+String s_connecting;
+String s_connected;
 struct optionStruct {
 	unsigned long magic;
 	int zone_4_max;
@@ -49,10 +59,15 @@ struct optionStruct {
 void setup() {
 	Serial.begin(9600);
 	Serial3.begin(9600);
+	s_connecting = "CONNECTING";
+	s_connected = "CONNECTED";
+	status = 0;
 	motordriver.init();
 	motordriver.setSpeed(180, MOTORA);
 	motordriver.setSpeed(180, MOTORB);
 	chargerParametres();
+	waitPairable();
+	waitConnected();
 }
 #define CAR_STOP 0
 #define CAR_FORWARD 1
@@ -61,9 +76,10 @@ uint8_t car_status = CAR_STOP;
 uint8_t new_status = car_status;
 String mode = "M";
 optionStruct os_write;
+uint8_t bt_command;
 // Tempo
-const unsigned long TEMPO_DIST = 500;
-const unsigned long TEMPO_BT = 10;
+const unsigned long TEMPO_DIST = 100;
+const unsigned long TEMPO_BT = 50;
 const unsigned long TEMPO_MOVE = 200;
 const unsigned long TEMPO_TURN = 500;
 // Pr�c�dente valeur de millis() Tempo
@@ -76,9 +92,18 @@ unsigned long currentMillis;
 
 void loop() {
 	
-	char commande_recue = getBluetoothMessage();
+	char commande_recue = readByte();
 	char commande_precedente;
 	float cmMsec;
+	if (getStatus() == PAIRABLE) {
+		motordriver.stop();
+		waitConnected();
+	}
+	currentMillis = millis();
+	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
+		previousMillisDIST = currentMillis;
+		cmMsec = scanFrontCenter();
+	}
 	if (commande_recue != CMD_INVALID) {
 		if (commande_precedente == NULL) {
 			commande_precedente = commande_recue;
@@ -91,11 +116,6 @@ void loop() {
 		}
 	}
 	
-	currentMillis = millis();
-	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
-		previousMillisDIST = currentMillis;
-		cmMsec = scanFrontCenter();
-	}
 	
 	if (mode == "A") {
 		autonome(cmMsec);
@@ -103,13 +123,119 @@ void loop() {
 }
 /*..........................................................*/
 /*..........................................................*/
-/*					BOUCLE RECEPTION BT						*/
+/*					BLUETOOTH								*/
 /*..........................................................*/
 /*..........................................................*/
-char getBluetoothMessage() {
-	char bt_command = Serial3.read();
-	return bt_command;
+void waitConnected() {
+	char recvChar;
+	while (status != CONNECTED) {
+		if (Serial3.available()) {
+			recvChar = Serial3.read();
+			if (recvChar == '+') {
+				while (Serial3.available() < 10);
+				String recvString;
+				for (uint8_t i = 0; i < 10; i++) {
+					recvChar = Serial3.read();
+					recvString += recvChar;
+				}
+				if (recvString == s_connecting) status = CONNECTING;
+			}
+			if (recvChar == 'C') {
+				while (Serial3.available() < 8);
+				String recvString;
+				recvString += recvChar;
+				for (uint8_t i = 0; i < 8; i++) {
+					recvChar = Serial3.read();
+					recvString += recvChar;
+				}
+				if (recvString == s_connected) status = CONNECTED;
+			}
+		}
+		else {
+			if (testAT()) status = PAIRABLE;
+			else {
+				delay(200);
+				if (testAT()) status = PAIRABLE;
+				else status = CONNECTED;
+			}
+		}
+	}
+}
+int8_t getStatus() {
+	return status;
+}
+void waitPairable() {
+	char recvChar;
+	while (status != PAIRABLE) {
+		if (Serial3.available()) {
+			recvChar = Serial3.read();
+			Serial.write(recvChar);
+			if (recvChar == '+') {
+				while (Serial3.available() == 0);
+				recvChar = Serial3.read();
+				Serial.write(recvChar);
+				if (recvChar == 'R')continue;
+				else if (recvChar == 'P') {
+					while (Serial3.available() < 7);
+					String recvString;
+					recvString += recvChar;
+					for (uint8_t i = 0; i < 7; i++) {
+						recvChar = Serial3.read();
+						recvString += recvChar;
+					}
+					if (recvString == "PAIRABLE") status = PAIRABLE;
+				}
+			}
+		}
+		else {
+			if (testAT())status = PAIRABLE;
+			else {
+				delay(200);
+				if (testAT()) status = PAIRABLE;
+				else { status = CONNECTED; break; }
+			}
+		}
+	}
+}
+/*Write AT command to bluetooth module*/
+bool writeAT(String cmd) {
+	Serial3.println(cmd);
+	delay(500);
+	if (Serial3.available() > 1) {
+		String recvString;
+		char recvChar;
+		recvChar = Serial3.read();
+		recvString += recvChar;
+		recvChar = Serial3.read();
+		recvString += recvChar;
+		if (recvString == "OK")return true;
+		else return false;
+	}
+	else return false;
+}
+bool testAT() {
+	clearBuffer();
+	return writeAT("AT");
+}
+void clearBuffer() {
+	char recvChar;
+	while (Serial3.available())recvChar = Serial3.read();
+}
 
+char readByte() {
+	if (status != CONNECTED) return 0xff;
+	if (Serial3.available())
+	{
+		char recvChar;
+		recvChar = Serial3.read();
+		if (recvChar == '+')//the remote control disconnect the car
+		{
+			waitPairable();
+			return 0xff;
+		}
+		else return recvChar;
+	}
+	else return 0xff;
 }
 
 /*..........................................................*/
@@ -217,13 +343,13 @@ void traitementMessage(char commande_a_traiter) {
 
 		break;
 	case CMD_AUTONOME:
-		Serial3.println("A");
+		writeAT("A");
 		mode = "A";
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
 		mode = "M";
-		Serial3.println("M");
+		writeAT("M");
 
 		break;
 	default: break;
@@ -268,7 +394,7 @@ void optDist() {
 	}
 	str_list_zone += "X";
 
-	Serial3.println(str_list_zone);
+	writeAT(str_list_zone);
 	return;
 
 }
@@ -297,7 +423,7 @@ void traitementOptions(char cmd) {
 			param = Serial3.read();
 		}
 	}
-	Serial3.println("W");
+	writeAT("W");
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -308,7 +434,7 @@ void listingBT() {
 	float cmMsec = scanFrontCenter();
 	String distance = String(cmMsec);
 	String list = ("Z" "/" "Distance : " + distance + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02");
-	Serial3.println(list);
+	writeAT(list);
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -323,7 +449,7 @@ void sauvegardeParametres() {
 	os_write.zone_4_min = tab_zone_param[3];
 	os_write.zone_4_max = tab_zone_param[4] ;
 	EEPROM.put(0, os_write);
-	Serial3.println("Q");
+	writeAT("Q");
 }
 void chargerParametres() {
 	EEPROM.get(0, os_write);
