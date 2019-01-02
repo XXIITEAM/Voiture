@@ -93,6 +93,7 @@ unsigned long currentMillis;
 void loop() {
 	
 	char commande_recue = readByte();
+ Serial.println(commande_recue);
 	char commande_precedente;
 	float cmMsec;
 	if (getStatus() == PAIRABLE) {
@@ -120,6 +121,7 @@ void loop() {
 	if (mode == "A") {
 		autonome(cmMsec);
 	}
+ traitementMessage(commande_recue);
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -288,10 +290,9 @@ void traitementMessage(char commande_a_traiter) {
 	case CMD_FORWARD:
 		
 		previousMillisDIST = millis();
-		while (currentMillis - previousMillisDIST >= TEMPO_MOVE) {
-			currentMillis = millis();
+
 			motordriver.goForward();
-		}
+		
 		break;
 	case CMD_RIGHT_FORWARD:
 		motordriver.goForward();
@@ -343,13 +344,13 @@ void traitementMessage(char commande_a_traiter) {
 
 		break;
 	case CMD_AUTONOME:
-		writeAT("A");
+		//writeAT("A");
 		mode = "A";
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
 		mode = "M";
-		writeAT("M");
+		//writeAT("M");
 
 		break;
 	default: break;
