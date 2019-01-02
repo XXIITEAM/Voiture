@@ -69,6 +69,7 @@ void setup() {
 	waitPairable();
 	waitConnected();
 }
+
 #define CAR_STOP 0
 #define CAR_FORWARD 1
 #define CAR_BACK 2
@@ -116,7 +117,6 @@ void loop() {
 		}
 	}
 	
-	
 	if (mode == "A") {
 		autonome(cmMsec);
 	}
@@ -161,9 +161,11 @@ void waitConnected() {
 		}
 	}
 }
+
 int8_t getStatus() {
 	return status;
 }
+
 void waitPairable() {
 	char recvChar;
 	while (status != PAIRABLE) {
@@ -173,7 +175,7 @@ void waitPairable() {
 			if (recvChar == '+') {
 				while (Serial3.available() == 0);
 				recvChar = Serial3.read();
-				Serial.write(recvChar);
+				//Serial.write(recvChar);
 				if (recvChar == 'R')continue;
 				else if (recvChar == 'P') {
 					while (Serial3.available() < 7);
@@ -197,6 +199,7 @@ void waitPairable() {
 		}
 	}
 }
+
 /*Write AT command to bluetooth module*/
 bool writeAT(String cmd) {
 	Serial3.println(cmd);
@@ -286,12 +289,7 @@ void traitementMessage(char commande_a_traiter) {
 	switch (commande_a_traiter)
 	{
 	case CMD_FORWARD:
-		
-		previousMillisDIST = millis();
-		while (currentMillis - previousMillisDIST >= TEMPO_MOVE) {
-			currentMillis = millis();
-			motordriver.goForward();
-		}
+		motordriver.goForward();
 		break;
 	case CMD_RIGHT_FORWARD:
 		motordriver.goForward();
@@ -337,7 +335,6 @@ void traitementMessage(char commande_a_traiter) {
 	case CMD_GETVALUES:
 		listingBT();
 		break;
-
 	case CMD_INVALID:
 		motordriver.stop();		
 
@@ -409,7 +406,7 @@ void traitementOptions(char cmd) {
 		if (param == CMD_WRITE) {
 			param = Serial3.read();
 		}
-		else if (cmd == CMD_DELIM) {
+		else if (param == CMD_DELIM) {
 			if (cmdStr != "") {
 				icmd = cmdStr.toInt();
 				tab_zone_param[i] = icmd;
@@ -419,7 +416,7 @@ void traitementOptions(char cmd) {
 			param = Serial3.read();
 		}
 		else {
-			cmdStr += cmd;
+			cmdStr += param;
 			param = Serial3.read();
 		}
 	}
