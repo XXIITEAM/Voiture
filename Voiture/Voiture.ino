@@ -202,7 +202,7 @@ void waitPairable() {
 /*Write AT command to bluetooth module*/
 bool writeAT(String cmd) {
 	Serial3.println(cmd);
-	delay(500);
+	/*delay(500);
 	if (Serial3.available() > 1) {
 		String recvString;
 		char recvChar;
@@ -212,8 +212,8 @@ bool writeAT(String cmd) {
 		recvString += recvChar;
 		if (recvString == "OK")return true;
 		else return false;
-	}
-	else return false;
+	}*/
+	return true;
 }
 bool testAT() {
 	clearBuffer();
@@ -344,13 +344,13 @@ void traitementMessage(char commande_a_traiter) {
 
 		break;
 	case CMD_AUTONOME:
-		//writeAT("A");
+		writeAT("A");
 		mode = "A";
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
 		mode = "M";
-		//writeAT("M");
+		writeAT("M");
 
 		break;
 	default: break;
