@@ -489,7 +489,7 @@ void temperature() {
 	{
 		String temp = String(t);
 		String hygro = String(h);
-		String th = ("T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%");
+		String th = "T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%";
     Serial.println(th);
 		writeAT(th);
 	}
