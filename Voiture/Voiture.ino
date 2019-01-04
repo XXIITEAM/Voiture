@@ -489,7 +489,9 @@ void temperature() {
 	{
 		String temp = String(t);
 		String hygro = String(h);
-		String th = "T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%";
+    float cmMsec = scanFrontCenter();
+    String distance = String(cmMsec);
+		String th = "T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%/" + "Distance: " + distance + "cm";
     Serial.println(th);
 		writeAT(th);
 	}
