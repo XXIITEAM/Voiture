@@ -5,11 +5,15 @@
 #include <MotorDriver.h>
 #include <stdlib.h>
 #include <EEPROM.h>
-
+#include <DHT.h>
 #include <Ultrasonic.h>
 //Définition capteur_front_center
 #define TRIGGER_PIN  5
 #define ECHO_PIN     3
+#define DHTPIN A0
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
 Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 //Définition des commandes
 //BT
@@ -68,6 +72,7 @@ void setup() {
 	chargerParametres();
 	waitPairable();
 	waitConnected();
+	dht.begin();
 }
 
 #define CAR_STOP 0
@@ -92,7 +97,6 @@ unsigned long previousMillisTurn = 0;
 unsigned long currentMillis;
 
 void loop() {
-	
 	char commande_recue = readByte();
 	char commande_precedente;
 	float cmMsec;
@@ -116,7 +120,7 @@ void loop() {
 
 		}
 	}
-	
+	temperature();
 	if (mode == "A") {
 		autonome(cmMsec);
 	}
@@ -472,4 +476,24 @@ void updateTableauParam() {
 	tab_zone_param[3] = os_write.zone_4_min;
 	tab_zone_param[4] = os_write.zone_4_max;
 }
-	
+void temperature() {
+	// Reading temperature or humidity takes about 250 milliseconds!
+	// Sensor readings may also be up to A0 seconds 'old' (its a very slow sensor)
+	float h = dht.readHumidity();
+	float t = dht.readTemperature();
+
+	// check if returns are valid, if they are NaN (not a number) then something went wrong!
+	if (isnan(t) || isnan(h))
+	{
+		Serial.println("Failed to read from DHT");
+	}
+	else
+	{
+		Serial.print("Humidity: ");
+		Serial.print(h);
+		Serial.print(" %\t");
+		Serial.print("Temperature: ");
+		Serial.print(t);
+		Serial.println(" *C");
+	}
+}
