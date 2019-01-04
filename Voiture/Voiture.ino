@@ -68,8 +68,8 @@ void setup() {
 	s_connected = "CONNECTED";
 	status = 0;
 	motordriver.init();
-	motordriver.setSpeed(180, MOTORA);
-	motordriver.setSpeed(180, MOTORB);
+	motordriver.setSpeed(240, MOTORA);
+	motordriver.setSpeed(240, MOTORB);
 	chargerParametres();
 	waitPairable();
 	waitConnected();
