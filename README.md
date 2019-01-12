@@ -6,17 +6,25 @@ E/S
 Capteurs US 
 
 Num : Trig : Echo : Pos
+
 1 : 22 : 23 : AvG
+
 2 : 24 : 25 : AvC
+
 3 : 26 : 27 : AvD
+
 4 : 28 : 29 : ArD
+
 5 : 30 : 31 : ArC
+
 6 : 32 : 33 : ArG
 
 Strategie US
 MAV : 1 2 3 Scan 
 MAR : 4 5 6 Scan
+
 Lv3
+
 1 : Av + D
 2 : Av + G/D
 3 : Av + G
@@ -39,6 +47,7 @@ Lv3
 Av+Ar : G/D 1 tour
 
 Lv2
+
 1 : S + D
 2 : S + G/D
 3 : S + G
