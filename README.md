@@ -20,7 +20,9 @@ Num : Trig : Echo : Pos
 6 : 32 : 33 : ArG
 
 Strategie US
+
 MAV : 1 2 3 Scan 
+
 MAR : 4 5 6 Scan
 
 Lv3
