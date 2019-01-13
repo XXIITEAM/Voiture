@@ -30,12 +30,6 @@ jobs:
     working_directory: ~/code
     docker:
       - image: circleci/python:2.7
-    steps:
-      - checkout
-      - run:
-          name: install cpplint
-          command: sudo pip install cpplint
-      - run: make cpplint
 
   generate_docs:
     working_directory: ~/code
