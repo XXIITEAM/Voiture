@@ -7,9 +7,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install PlatformIO
-          command: sudo pip install -U platformio
-      - run:
           name: install current code as a PlatformIO library with all dependencies
           command: platformio lib -g install file://.
       - run:
