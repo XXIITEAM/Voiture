@@ -1,0 +1,6 @@
+Example1:
+   - paths:
+     - sketchbook_path: /home/bcmi/Arduino
+     - arduino_data: /home/bcmi/.arduino15
+   - proxy:
+- type: auto
