@@ -1,8 +1,6 @@
-# Projet Ardroid
+# Projet Ardroid / Dépôt Voiture
 
 [![N|Solid](https://avatars2.githubusercontent.com/u/10786005?s=400&u=0123d791bd59fcae2d5bd748c409cf4f03ea49ee&v=0)]()
-
-[![Build Status](https://travis-ci.org/joemccann/dillinger.svg?branch=master)](https://travis-ci.org/joemccann/dillinger)
 
 Ardroid est une solution de contrôle véhicule/smartphone.
 
@@ -49,6 +47,7 @@ Carte Arduino Entrées/Sorties
 #---------------------------------#
 Capteurs US
 #---------------------------------#
+
 Num : Trig : Echo : Pos
 * 1 : 22 : 23 : AvG
 * 2 : 24 : 25 : AvC
