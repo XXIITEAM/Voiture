@@ -42,6 +42,7 @@ Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 #define STOP_CMD			'X'
 #define CMD_DELIM			'/'
 #define CMD_SAVE			'Q'
+#define CMD_TEMP			'T'
 #define SPEED_STEPS 20
 //Définition vitesse
 uint8_t speed0 = 220;
@@ -67,8 +68,8 @@ void setup() {
 	s_connected = "CONNECTED";
 	status = 0;
 	motordriver.init();
-	motordriver.setSpeed(180, MOTORA);
-	motordriver.setSpeed(180, MOTORB);
+	motordriver.setSpeed(220, MOTORA);
+	motordriver.setSpeed(220, MOTORB);
 	chargerParametres();
 	waitPairable();
 	waitConnected();
@@ -120,7 +121,6 @@ void loop() {
 
 		}
 	}
-	temperature();
 	if (mode == "A") {
 		autonome(cmMsec);
 	}
@@ -351,7 +351,9 @@ void traitementMessage(char commande_a_traiter) {
 		motordriver.stop();
 		mode = "M";
 		writeAT("M");
-
+		break;
+	case CMD_TEMP:
+		temperature();
 		break;
 	default: break;
 	}
@@ -477,23 +479,20 @@ void updateTableauParam() {
 	tab_zone_param[4] = os_write.zone_4_max;
 }
 void temperature() {
-	// Reading temperature or humidity takes about 250 milliseconds!
-	// Sensor readings may also be up to A0 seconds 'old' (its a very slow sensor)
 	float h = dht.readHumidity();
 	float t = dht.readTemperature();
-
-	// check if returns are valid, if they are NaN (not a number) then something went wrong!
 	if (isnan(t) || isnan(h))
 	{
 		Serial.println("Failed to read from DHT");
 	}
 	else
 	{
-		Serial.print("Humidity: ");
-		Serial.print(h);
-		Serial.print(" %\t");
-		Serial.print("Temperature: ");
-		Serial.print(t);
-		Serial.println(" *C");
+		String temp = String(t);
+		String hygro = String(h);
+    float cmMsec = scanFrontCenter();
+    String distance = String(cmMsec);
+		String th = "T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%/" + "Distance: " + distance + "cm";
+    Serial.println(th);
+		writeAT(th);
 	}
 }
