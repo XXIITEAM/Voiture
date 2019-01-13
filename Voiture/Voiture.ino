@@ -1,21 +1,27 @@
-//test 1:2015.08.15
-//#include <car_bluetooth.h>
-//#include <SoftwareSerial.h>   //Software Serial Port
+#include <XXIISensorLib.h>
 #include <String.h>
 #include <MotorDriver.h>
 #include <stdlib.h>
 #include <EEPROM.h>
 #include <DHT.h>
-#include <Ultrasonic.h>
-//Définition capteur_front_center
-#define TRIGGER_PIN  5
-#define ECHO_PIN     3
-#define DHTPIN A0
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
 
-Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
-//Définition des commandes
+/*-------ULTRASONIC CONFIGURATION-------*/
+
+//Niveaux d'alerte distance
+#define NV_ALERTE_1				1
+#define NV_ALERTE_2				2
+#define NV_ALERTE_3				3
+#define NV_ALERTE_4				4
+#define NV_ALERTE_5				5
+
+//Bool d'alerte active
+#define ALERTE false
+
+XXIISensorLib Sensor;
+
+int alerteCentre;
+int alerteGauche;
+int alerteDroite;
 //BT
 #define INITIALIZING 0
 #define READY        1
@@ -23,6 +29,11 @@ Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 #define PAIRABLE     3
 #define CONNECTING   4
 #define CONNECTED    5
+
+//Capteur Hydrométrie/Température
+#define DHTPIN A0
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
 //CMD
 #define CMD_INVALID     0XFF
 #define CMD_FORWARD     'F'
@@ -89,9 +100,7 @@ const unsigned long TEMPO_DIST = 100;
 const unsigned long TEMPO_BT = 50;
 const unsigned long TEMPO_MOVE = 200;
 const unsigned long TEMPO_TURN = 500;
-// Pr�c�dente valeur de millis() Tempo
 unsigned long previousMillisBT = 0;
-
 unsigned long previousMillisDIST = 0;
 unsigned long previousMillisMove = 0;
 unsigned long previousMillisTurn = 0;
@@ -100,15 +109,16 @@ unsigned long currentMillis;
 void loop() {
 	char commande_recue = readByte();
 	char commande_precedente;
-	float cmMsec;
+	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
 	if (getStatus() == PAIRABLE) {
 		motordriver.stop();
 		waitConnected();
 	}
 	currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
+		Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
 		previousMillisDIST = currentMillis;
-		cmMsec = scanFrontCenter();
+		
 	}
 	if (commande_recue != CMD_INVALID) {
 		if (commande_precedente == NULL) {
@@ -122,7 +132,7 @@ void loop() {
 		}
 	}
 	if (mode == "A") {
-		autonome(cmMsec);
+		autonome(dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g);
 	}
 }
 /*..........................................................*/
@@ -250,34 +260,33 @@ char readByte() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
-void autonome(float distance_front) {
-	
-	if (distance_front >= tab_zone_param[4]) {
+void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float ar_g) {
+	if (av_g >= tab_zone_param[4]) {
 			motordriver.goRight();
 			delay(TEMPO_MOVE);
 	}
 
-	if (distance_front < tab_zone_param[4] && distance_front >= tab_zone_param[3]) {
+	if (av_g < tab_zone_param[4] && av_g >= tab_zone_param[3]) {
 			motordriver.goForward();
 			delay(TEMPO_MOVE);
 
 	}
-	if (distance_front < tab_zone_param[3] && distance_front >= tab_zone_param[2]) {
+	if (av_g < tab_zone_param[3] && av_g >= tab_zone_param[2]) {
 			motordriver.goForward();
 			delay(TEMPO_MOVE);
 
 	}
-	if (distance_front < tab_zone_param[2] && distance_front >= tab_zone_param[1]) {
+	if (av_g < tab_zone_param[2] && av_g >= tab_zone_param[1]) {
 			motordriver.goLeft();
 			delay(TEMPO_MOVE);
 
 	}
-	if (distance_front < tab_zone_param[1] && distance_front >= tab_zone_param[0]) {
+	if (av_g < tab_zone_param[1] && av_g >= tab_zone_param[0]) {
 			motordriver.goBackward();
 			delay(TEMPO_MOVE);
 
 	}
-	if (distance_front < tab_zone_param[0]) {
+	if (av_g < tab_zone_param[0]) {
 			motordriver.goBackward();
 			delay(TEMPO_MOVE);
 
@@ -341,7 +350,6 @@ void traitementMessage(char commande_a_traiter) {
 		break;
 	case CMD_INVALID:
 		motordriver.stop();		
-
 		break;
 	case CMD_AUTONOME:
 		writeAT("A");
@@ -363,12 +371,135 @@ void traitementMessage(char commande_a_traiter) {
 /*					SCAN US FRONT							*/
 /*..........................................................*/
 /*..........................................................*/
-float scanFrontCenter() {
-  long microsec = ultrasonic.timing();
-  float distance = ultrasonic.convert(microsec, Ultrasonic::CM);
-  return distance;
+float * US_scan_Av(float us1_dist, float us2_dist, float us3_dist) {
+	float dist_av_g, dist_av_c, dist_av_d;
+	Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
+ 
+  float US_dists_av[] = { dist_av_g, dist_av_c, dist_av_d};
+  return US_dists_av;
 }
 
+float * US_scan_Ar(float us4_dist, float us5_dist, float us6_dist) {
+	float dist_av_g, dist_av_c, dist_av_d;
+	Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
+
+	float US_dists_ar[] = {dist_av_g, dist_av_c, dist_av_d};
+	return US_dists_ar;
+}
+void detectionObstacles(float gauche, float centre, float droite) {
+	/*Serial.print(" Gauche : ");
+	Serial.print(gauche);
+	Serial.print(", Face : ");
+	Serial.print(face);
+	Serial.print(", Droite: ");
+	Serial.println(droite);*/
+
+	//CENTRE
+	if ((centre > tab_zone_param[4])) {
+		alerteCentre = NV_ALERTE_1;
+	}
+	if ((centre <= tab_zone_param[4]) && (centre > tab_zone_param[3])) {
+		alerteCentre = NV_ALERTE_2;
+	}
+	if ((centre <= tab_zone_param[3]) && (centre > tab_zone_param[2])) {
+		alerteCentre = NV_ALERTE_3;
+	}
+	if ((centre <= tab_zone_param[2]) && (centre > tab_zone_param[1])) {
+		alerteCentre = NV_ALERTE_4;
+	}
+	if ((centre <= tab_zone_param[1]) && (centre > tab_zone_param[0])) {
+		alerteCentre = NV_ALERTE_5;
+	}
+
+
+
+	if ((gauche > tab_zone_param[4])) {
+		alerteGauche = NV_ALERTE_1;
+	}
+	if ((gauche <= tab_zone_param[4]) && (gauche > tab_zone_param[3])) {
+		alerteGauche = NV_ALERTE_2;
+	}
+	if ((gauche <= tab_zone_param[3]) && (gauche > tab_zone_param[2])) {
+		alerteGauche = NV_ALERTE_3;
+
+	}
+	if ((gauche <= tab_zone_param[2]) && (gauche > tab_zone_param[1])) {
+		alerteGauche = NV_ALERTE_4;
+	}
+	if ((gauche <= tab_zone_param[1]) && (gauche > tab_zone_param[0])) {
+		alerteGauche = NV_ALERTE_5;
+	}
+
+	//DROITE
+	if ((droite > tab_zone_param[4])) {
+		alerteDroite = NV_ALERTE_1;
+	}
+	if ((droite <= tab_zone_param[4]) && (droite > tab_zone_param[3])) {
+		alerteDroite = NV_ALERTE_2;
+	}
+	if ((droite <= tab_zone_param[3]) && (droite > tab_zone_param[2])) {
+		alerteDroite = NV_ALERTE_3;
+	}
+	if ((droite <= tab_zone_param[2]) && (droite > tab_zone_param[1])) {
+		alerteDroite = NV_ALERTE_4;
+	}
+	if ((droite <= tab_zone_param[1]) && (droite > tab_zone_param[0])) {
+		alerteDroite = NV_ALERTE_5;
+	}
+
+	if ((alerteCentre >= NV_ALERTE_3) || (alerteDroite >= NV_ALERTE_3) || (alerteGauche >= NV_ALERTE_3)) {
+		float mface, mdroite, mgauche;
+		mface = centre;
+		mdroite = droite;
+		mgauche = gauche;
+		float minTemp = min(mdroite, min(mgauche, mface));
+		if (mdroite == minTemp) {
+			Serial.println("alerte Droite niveau " + alerteDroite);
+			//Tourner à gauche
+		}
+		if (mgauche == minTemp) {
+			Serial.println("alerte Gauche niveau " + alerteGauche);
+			//Tourner à droite
+			if (alerteCentre >= NV_ALERTE_3) {
+
+			}
+		}
+		if (mface == minTemp) {
+			Serial.println("alerte Face niveau " + alerteCentre);
+			minTemp = min(alerteDroite, alerteGauche);
+			if (alerteDroite == minTemp) {
+				switch (alerteDroite) {
+				case NV_ALERTE_3:
+					break;
+				case NV_ALERTE_2:
+					break;
+				case NV_ALERTE_1:
+					break;
+				}
+				//reculer en s'écartant de l'obstacle (tourner à gauche)
+			}
+			else {
+				//reculer en s'écartant de l'obstacle (tourner à droite)
+				switch (alerteGauche) {
+				case NV_ALERTE_3:
+					break;
+				case NV_ALERTE_2:
+					break;
+				case NV_ALERTE_1:
+					break;
+				}
+			}
+
+		}
+		Serial.println("Aucun");
+
+	}
+	else {
+		Serial.println("Pas d'alerte");
+	}
+
+
+}
 void rightForward() {
 	motordriver.setSpeed(100, MOTORB);
 	return;
@@ -408,13 +539,20 @@ void traitementOptions(char cmd) {
 	char cmd1[5];
 	int icmd;
 	int i = 0;
+	
 	while (param != STOP_CMD) {
 		if (param == CMD_WRITE) {
 			param = Serial3.read();
 		}
 		else if (param == CMD_DELIM) {
 			if (cmdStr != "") {
-				icmd = cmdStr.toInt();
+				try {
+					icmd = cmdStr.toInt();
+				}
+				catch (IOException  e) {
+
+					writeAT("E");
+				}
 				tab_zone_param[i] = icmd;
 				i++;
 				cmdStr = "";
@@ -426,6 +564,7 @@ void traitementOptions(char cmd) {
 			param = Serial3.read();
 		}
 	}
+
 	writeAT("W");
 }
 /*..........................................................*/
@@ -434,7 +573,7 @@ void traitementOptions(char cmd) {
 /*..........................................................*/
 /*..........................................................*/
 void listingBT() {
-	float cmMsec = scanFrontCenter();
+	float cmMsec = 12.0;
 	String distance = String(cmMsec);
 	String list = ("Z" "/" "Distance : " + distance + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02");
 	writeAT(list);
@@ -489,8 +628,8 @@ void temperature() {
 	{
 		String temp = String(t);
 		String hygro = String(h);
-    float cmMsec = scanFrontCenter();
-    String distance = String(cmMsec);
+    //float cmMsec = US_scan_Av();
+    String distance = "100";
 		String th = "T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%/" + "Distance: " + distance + "cm";
     Serial.println(th);
 		writeAT(th);
