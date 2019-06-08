@@ -549,7 +549,7 @@ void traitementOptions(char cmd) {
 				try {
 					icmd = cmdStr.toInt();
 				}
-				catch (IOException  e) {
+				catch (int  e) {
 
 					writeAT("E");
 				}
