@@ -3,7 +3,7 @@
 #include <MotorDriver.h>
 #include <stdlib.h>
 #include <EEPROM.h>
-//#include <DHT.h>
+#include <DHT.h>
 
 /*-------ULTRASONIC CONFIGURATION-------*/
 
@@ -31,10 +31,9 @@ int alerteDroite;
 #define CONNECTED    5
 
 //Capteur Hydrométrie/Température
-//#define DHTPIN A0
-//#define DHTTYPE DHT11
-//DHT dht(DHTPIN, DHTTYPE);
-//CMD
+#define DHTPIN A0
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
 
 #define CMD_INVALID     0xff
 #define CMD_FORWARD     'F'
@@ -75,8 +74,8 @@ struct optionStruct {
 };
 
 void setup() {
-	Serial.begin(9600);
-	Serial3.begin(9600);
+	Serial.begin(115200);
+	Serial3.begin(115200);
 	s_connecting = "CONNECTING";
 	s_connected = "CONNECTED";
 	status = 0;
@@ -124,20 +123,21 @@ void loop() {
 		previousMillisDIST = currentMillis;
 		
 	}*/
-	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE) {
-   if (commande_recue != commande_precedente) {
+	if (mode != "A" || commande_recue == 'M') {
+		if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE) {
+			if (commande_recue != commande_precedente) {
+				commande_precedente = commande_recue;
+				Serial.print("Nouvelle commande : ");
+				Serial.print(commande_recue);
+				Serial.print("\n");
+				traitementMessage(commande_recue);
+			}
 			commande_precedente = commande_recue;
-      Serial.print("Nouvelle commande : ");
-      Serial.print(commande_recue);
-      Serial.print("\n");
-			traitementMessage(commande_recue);
 		}
-    commande_precedente = commande_recue;
 	}
-
-	/*if (mode == "A") {
+	else {
 		autonome(dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g);
-	}*/
+	}
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -220,7 +220,7 @@ void waitPairable() {
 
 /*Write AT command to bluetooth module*/
 bool writeAT(String cmd) {
-	//Serial3.println(cmd);
+	Serial3.println(cmd);
 	//delay(500);
 	if (Serial3.available() > 1) {
 		String recvString;
@@ -234,6 +234,9 @@ bool writeAT(String cmd) {
 		else return false;
 	}
 	else return false;
+}
+bool writeMsg(char cmd) {
+	Serial3.println(cmd);
 }
 bool testAT() {
 	clearBuffer();
@@ -265,7 +268,7 @@ char readByte() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
-/*void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float ar_g) {
+void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float ar_g) {
 	if (av_g >= tab_zone_param[4]) {
 			motordriver.goRight();
 			delay(TEMPO_MOVE);
@@ -298,8 +301,8 @@ char readByte() {
 
 	}
 	
-
-}*/
+	return;
+}
 /*..........................................................*/
 /*..........................................................*/
 /*					TRAITEMENT COMMANDE						*/
@@ -536,8 +539,8 @@ void optDist() {
 	}
 	str_list_zone += "X";
 
-	writeAT(str_list_zone);
-	//Serial.println(str_list_zone);
+	Serial3.println(str_list_zone);
+	Serial.println(str_list_zone);
 	return;
 
 }
@@ -568,7 +571,7 @@ void traitementOptions(char cmd) {
 		}
 	}
 
-	writeAT("W");
+	Serial3.println("W");
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -578,8 +581,8 @@ void traitementOptions(char cmd) {
 void listingBT() {
 	float cmMsec = 12.0;
 	String distance = String(cmMsec);
-	String list = ("Z" "/" "Distance : " + distance + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02" + "/" + "Temp�rature : " + "21.02");
-	writeAT(list);
+	String list = ("Z" "/" "Distance : " + distance + "/" + temperature() );
+	Serial3.println(list);
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -597,12 +600,14 @@ void sauvegardeParametres() {
 	writeAT("Q");
 }
 void chargerParametres() {
+	Serial.println("charger param");
 	EEPROM.get(0, os_write);
 	// Test initialisation de la m�moire
 	byte erreur = os_write.magic != STRUCT_MAGIC;
 	
 	// Si erreur on attribue des valeurs par d�faut
 	if (erreur) {
+		Serial.println("Erreur struct");
 		os_write.magic = STRUCT_MAGIC;
 		os_write.zone_1_min = 10;
 		os_write.zone_2_min = 30;
@@ -614,13 +619,14 @@ void chargerParametres() {
 	updateTableauParam();
 }
 void updateTableauParam() {
+	Serial.println("update tab param");
 	tab_zone_param[0] = os_write.zone_1_min;
 	tab_zone_param[1] = os_write.zone_2_min;
 	tab_zone_param[2] = os_write.zone_3_min;
 	tab_zone_param[3] = os_write.zone_4_min;
 	tab_zone_param[4] = os_write.zone_4_max;
 }
-/*void temperature() {
+String temperature() {
 	float h = dht.readHumidity();
 	float t = dht.readTemperature();
 	if (isnan(t) || isnan(h))
@@ -632,9 +638,9 @@ void updateTableauParam() {
 		String temp = String(t);
 		String hygro = String(h);
     //float cmMsec = US_scan_Av();
-    String distance = "100";
-		String th = "T" "/" "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%/" + "Distance: " + distance + "cm";
-    Serial.println(th);
-		writeAT(th);
+		String th = "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%/";
+		return th;
 	}
-}*/
+	
+	
+}

@@ -3,7 +3,7 @@
 
 XXIISensorLib::XXIISensorLib()
 {
-	Serial.begin(500000);
+	Serial.begin(115200);
 	pinMode(US1_TRIGGER_PIN, OUTPUT);
 	pinMode(US1_ECHO_PIN, INPUT);
 	pinMode(US2_TRIGGER_PIN, OUTPUT);
