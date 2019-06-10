@@ -35,7 +35,8 @@ int alerteDroite;
 //#define DHTTYPE DHT11
 //DHT dht(DHTPIN, DHTTYPE);
 //CMD
-#define CMD_INVALID     0XFF
+
+#define CMD_INVALID     0xff
 #define CMD_FORWARD     'F'
 #define CMD_RIGHT_FRONT 'R'
 #define CMD_RIGHT_FORWARD	'D'
@@ -90,6 +91,7 @@ void setup() {
 }
 char commande_precedente = 'I';
 char commande_recue;
+char CMD_VIDE = NULL;
 #define CAR_STOP 0
 #define CAR_FORWARD 1
 #define CAR_BACK 2
@@ -111,37 +113,43 @@ unsigned long currentMillis;
 
 void loop() {
 	commande_recue = readByte();
-	Serial.println(commande_recue);
 	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
 	if (getStatus() == PAIRABLE) {
 		motordriver.stop();
 		waitConnected();
 	}
-	currentMillis = millis();
+	/*currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 		Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
 		previousMillisDIST = currentMillis;
 		
-	}
-	
-	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP) {
-		if (commande_precedente == 'I') {
-			commande_precedente = commande_recue;
+	}*/
+	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE || status == CONNECTED) {
+		/*if (commande_precedente == 'I') {
+
 			traitementMessage(commande_recue);
 			Serial.println("Premiere commande");
-			return;
-		}
-		else if (commande_recue != commande_precedente) {
+      Serial.println(commande_recue);
+		}*/
+   if (commande_recue != commande_precedente) {
 			commande_precedente = commande_recue;
       Serial.println("nouvelle commande");
+      Serial.println(commande_recue);
+      if(commande_recue == 'M')
+      {
+        Serial.println("Mode manuel");
+        Serial.println(commande_recue);
+      }
+      if(commande_recue == 'A')
+      {
+        Serial.println("Mode auto");
+        Serial.println(commande_recue);
+      }
 			traitementMessage(commande_recue);
-		
-			return;
-
 		}
-
+    commande_precedente = commande_recue;
 	}
-	//traitementMessage(commande_recue);
+
 	/*if (mode == "A") {
 		autonome(dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g);
 	}*/
@@ -200,7 +208,7 @@ void waitPairable() {
 			if (recvChar == '+') {
 				while (Serial3.available() == 0);
 				recvChar = Serial3.read();
-				//Serial.write(recvChar);
+				Serial.write(recvChar);
 				if (recvChar == 'R')continue;
 				else if (recvChar == 'P') {
 					while (Serial3.available() < 7);
@@ -217,7 +225,7 @@ void waitPairable() {
 		else {
 			if (testAT())status = PAIRABLE;
 			else {
-				//delay(200);
+				delay(200);
 				if (testAT()) status = PAIRABLE;
 				else { status = CONNECTED; break; }
 			}
@@ -227,7 +235,7 @@ void waitPairable() {
 
 /*Write AT command to bluetooth module*/
 bool writeAT(String cmd) {
-	Serial3.println(cmd);
+	//Serial3.println(cmd);
 	//delay(500);
 	if (Serial3.available() > 1) {
 		String recvString;
@@ -272,7 +280,7 @@ char readByte() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
-void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float ar_g) {
+/*void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float ar_g) {
 	if (av_g >= tab_zone_param[4]) {
 			motordriver.goRight();
 			delay(TEMPO_MOVE);
@@ -285,6 +293,7 @@ void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float 
 	}
 	if (av_g < tab_zone_param[3] && av_g >= tab_zone_param[2]) {
 			motordriver.goForward();
+            Serial.println("Avance");
 			delay(TEMPO_MOVE);
 
 	}
@@ -305,7 +314,7 @@ void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float 
 	}
 	
 
-}
+}*/
 /*..........................................................*/
 /*..........................................................*/
 /*					TRAITEMENT COMMANDE						*/
@@ -314,40 +323,50 @@ void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float 
 void traitementMessage(char commande_a_traiter) {
 	switch (commande_a_traiter)
 	{
+
 	case CMD_FORWARD:
 		motordriver.goForward();
+    Serial.println("Avance");
 		break;
-	case CMD_RIGHT_FORWARD:
+	/*case CMD_RIGHT_FORWARD:
 		motordriver.goForward();
+    Serial.println("Avance Droite");
 		rightForward();
 		motordriver.setSpeed(speed0, MOTORB);
-		break;
+		break;*/
 	case CMD_LEFT_FORWARD:
 		motordriver.goForward();
+    Serial.println("Avance Gauche");
 		leftForward();
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_BACK:
 		motordriver.goBackward();
 		rightForward();
+   Serial.println("Recule Droite");
 		motordriver.setSpeed(speed0, MOTORB);
 		break;
 	case CMD_LEFT_BACK:
 		motordriver.goBackward();
 		leftForward();
+    Serial.println("Recule Gauche");
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_FRONT:
 		motordriver.goRight();
+    Serial.println("Droite");
 		break;
 	case CMD_BACKWARD:
 		motordriver.goBackward();
+   Serial.println("Recule");
 		break;
 	case CMD_LEFT_FRONT:
 		motordriver.goLeft();
+   Serial.println("Gauche");
 		break;
 	case CMD_STOP:
 		motordriver.stop();
+   Serial.println("Stop");
 		break;
 	case CMD_OPT_DIST:
 		optDist();
@@ -361,21 +380,21 @@ void traitementMessage(char commande_a_traiter) {
 	case CMD_GETVALUES:
 		listingBT();
 		break;
-	/*case CMD_INVALID:
-		motordriver.stop();		
-		break;*/
 	case CMD_AUTONOME:
 		writeAT("A");
 		mode = "A";
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
+   Serial.println("Stop Manuel");
 		mode = "M";
 		writeAT("M");
 		break;
 	case CMD_TEMP:
 		//temperature();
 		break;
+     default :
+ break;
 	}
 	return;
 }
