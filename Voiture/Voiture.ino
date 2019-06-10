@@ -74,8 +74,8 @@ struct optionStruct {
 };
 
 void setup() {
-	Serial.begin(500000);
-	Serial3.begin(500000);
+	Serial.begin(9600);
+	Serial3.begin(9600);
 	s_connecting = "CONNECTING";
 	s_connected = "CONNECTED";
 	status = 0;
@@ -88,7 +88,7 @@ void setup() {
 	mode = "M";
 	//dht.begin();
 }
-char commande_precedente;
+char commande_precedente = 'I';
 char commande_recue;
 #define CAR_STOP 0
 #define CAR_FORWARD 1
@@ -111,7 +111,7 @@ unsigned long currentMillis;
 
 void loop() {
 	commande_recue = readByte();
-	
+	Serial.println(commande_recue);
 	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
 	if (getStatus() == PAIRABLE) {
 		motordriver.stop();
@@ -125,7 +125,7 @@ void loop() {
 	}
 	
 	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP) {
-		if (commande_precedente == NULL) {
+		if (commande_precedente == 'I') {
 			commande_precedente = commande_recue;
 			traitementMessage(commande_recue);
 			Serial.println("Premiere commande");
@@ -133,12 +133,13 @@ void loop() {
 		}
 		else if (commande_recue != commande_precedente) {
 			commande_precedente = commande_recue;
+      Serial.println("nouvelle commande");
 			traitementMessage(commande_recue);
-			Serial.println("nouvelle commande");
+		
 			return;
 
 		}
-		Serial.println(commande_recue);
+
 	}
 	//traitementMessage(commande_recue);
 	/*if (mode == "A") {
@@ -360,9 +361,9 @@ void traitementMessage(char commande_a_traiter) {
 	case CMD_GETVALUES:
 		listingBT();
 		break;
-	case CMD_INVALID:
+	/*case CMD_INVALID:
 		motordriver.stop();		
-		break;
+		break;*/
 	case CMD_AUTONOME:
 		writeAT("A");
 		mode = "A";
