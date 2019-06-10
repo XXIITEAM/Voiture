@@ -3,7 +3,7 @@
 #include <MotorDriver.h>
 #include <stdlib.h>
 #include <EEPROM.h>
-#include <DHT.h>
+//#include <DHT.h>
 
 /*-------ULTRASONIC CONFIGURATION-------*/
 
@@ -31,9 +31,9 @@ int alerteDroite;
 #define CONNECTED    5
 
 //Capteur Hydrométrie/Température
-#define DHTPIN A0
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
+//#define DHTPIN A0
+//#define DHTTYPE DHT11
+//DHT dht(DHTPIN, DHTTYPE);
 //CMD
 #define CMD_INVALID     0XFF
 #define CMD_FORWARD     'F'
@@ -63,6 +63,7 @@ int tab_zone_param[5];
 int8_t status;
 String s_connecting;
 String s_connected;
+String mode;
 struct optionStruct {
 	unsigned long magic;
 	int zone_4_max;
@@ -73,8 +74,8 @@ struct optionStruct {
 };
 
 void setup() {
-	Serial.begin(9600);
-	Serial3.begin(9600);
+	Serial.begin(500000);
+	Serial3.begin(500000);
 	s_connecting = "CONNECTING";
 	s_connected = "CONNECTED";
 	status = 0;
@@ -84,22 +85,24 @@ void setup() {
 	chargerParametres();
 	waitPairable();
 	waitConnected();
-	dht.begin();
+	mode = "M";
+	//dht.begin();
 }
-
+char commande_precedente;
+char commande_recue;
 #define CAR_STOP 0
 #define CAR_FORWARD 1
 #define CAR_BACK 2
 uint8_t car_status = CAR_STOP;
 uint8_t new_status = car_status;
-String mode = "M";
+
 optionStruct os_write;
 uint8_t bt_command;
 // Tempo
 const unsigned long TEMPO_DIST = 100;
-const unsigned long TEMPO_BT = 50;
-const unsigned long TEMPO_MOVE = 200;
-const unsigned long TEMPO_TURN = 500;
+const unsigned long TEMPO_BT = 500;
+const unsigned long TEMPO_MOVE = 100;
+const unsigned long TEMPO_TURN = 200;
 unsigned long previousMillisBT = 0;
 unsigned long previousMillisDIST = 0;
 unsigned long previousMillisMove = 0;
@@ -107,8 +110,8 @@ unsigned long previousMillisTurn = 0;
 unsigned long currentMillis;
 
 void loop() {
-	char commande_recue = readByte();
-	char commande_precedente;
+	commande_recue = readByte();
+	
 	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
 	if (getStatus() == PAIRABLE) {
 		motordriver.stop();
@@ -120,20 +123,27 @@ void loop() {
 		previousMillisDIST = currentMillis;
 		
 	}
-	if (commande_recue != CMD_INVALID) {
+	
+	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP) {
 		if (commande_precedente == NULL) {
 			commande_precedente = commande_recue;
 			traitementMessage(commande_recue);
+			Serial.println("Premiere commande");
+			return;
 		}
 		else if (commande_recue != commande_precedente) {
 			commande_precedente = commande_recue;
 			traitementMessage(commande_recue);
+			Serial.println("nouvelle commande");
+			return;
 
 		}
+		Serial.println(commande_recue);
 	}
-	if (mode == "A") {
+	//traitementMessage(commande_recue);
+	/*if (mode == "A") {
 		autonome(dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g);
-	}
+	}*/
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -168,7 +178,7 @@ void waitConnected() {
 		else {
 			if (testAT()) status = PAIRABLE;
 			else {
-				delay(200);
+				//delay(200);
 				if (testAT()) status = PAIRABLE;
 				else status = CONNECTED;
 			}
@@ -206,7 +216,7 @@ void waitPairable() {
 		else {
 			if (testAT())status = PAIRABLE;
 			else {
-				delay(200);
+				//delay(200);
 				if (testAT()) status = PAIRABLE;
 				else { status = CONNECTED; break; }
 			}
@@ -217,9 +227,10 @@ void waitPairable() {
 /*Write AT command to bluetooth module*/
 bool writeAT(String cmd) {
 	Serial3.println(cmd);
-	delay(500);
+	//delay(500);
 	if (Serial3.available() > 1) {
 		String recvString;
+		
 		char recvChar;
 		recvChar = Serial3.read();
 		recvString += recvChar;
@@ -291,6 +302,7 @@ void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float 
 			delay(TEMPO_MOVE);
 
 	}
+	
 
 }
 /*..........................................................*/
@@ -361,10 +373,10 @@ void traitementMessage(char commande_a_traiter) {
 		writeAT("M");
 		break;
 	case CMD_TEMP:
-		temperature();
+		//temperature();
 		break;
-	default: break;
 	}
+	return;
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -387,12 +399,12 @@ float * US_scan_Ar(float us4_dist, float us5_dist, float us6_dist) {
 	return US_dists_ar;
 }
 void detectionObstacles(float gauche, float centre, float droite) {
-	/*Serial.print(" Gauche : ");
+	Serial.print(" Gauche : ");
 	Serial.print(gauche);
 	Serial.print(", Face : ");
-	Serial.print(face);
+	Serial.print(centre);
 	Serial.print(", Droite: ");
-	Serial.println(droite);*/
+	Serial.println(droite);
 
 	//CENTRE
 	if ((centre > tab_zone_param[4])) {
@@ -529,6 +541,7 @@ void optDist() {
 	str_list_zone += "X";
 
 	writeAT(str_list_zone);
+	//Serial.println(str_list_zone);
 	return;
 
 }
@@ -546,13 +559,7 @@ void traitementOptions(char cmd) {
 		}
 		else if (param == CMD_DELIM) {
 			if (cmdStr != "") {
-				try {
 					icmd = cmdStr.toInt();
-				}
-				catch (int  e) {
-
-					writeAT("E");
-				}
 				tab_zone_param[i] = icmd;
 				i++;
 				cmdStr = "";
@@ -617,7 +624,7 @@ void updateTableauParam() {
 	tab_zone_param[3] = os_write.zone_4_min;
 	tab_zone_param[4] = os_write.zone_4_max;
 }
-void temperature() {
+/*void temperature() {
 	float h = dht.readHumidity();
 	float t = dht.readTemperature();
 	if (isnan(t) || isnan(h))
@@ -634,4 +641,4 @@ void temperature() {
     Serial.println(th);
 		writeAT(th);
 	}
-}
+}*/
