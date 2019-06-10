@@ -124,27 +124,12 @@ void loop() {
 		previousMillisDIST = currentMillis;
 		
 	}*/
-	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE || status == CONNECTED) {
-		/*if (commande_precedente == 'I') {
-
-			traitementMessage(commande_recue);
-			Serial.println("Premiere commande");
-      Serial.println(commande_recue);
-		}*/
+	if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE) {
    if (commande_recue != commande_precedente) {
 			commande_precedente = commande_recue;
-      Serial.println("nouvelle commande");
-      Serial.println(commande_recue);
-      if(commande_recue == 'M')
-      {
-        Serial.println("Mode manuel");
-        Serial.println(commande_recue);
-      }
-      if(commande_recue == 'A')
-      {
-        Serial.println("Mode auto");
-        Serial.println(commande_recue);
-      }
+      Serial.print("Nouvelle commande : ");
+      Serial.print(commande_recue);
+      Serial.print("\n");
 			traitementMessage(commande_recue);
 		}
     commande_precedente = commande_recue;
@@ -326,7 +311,6 @@ void traitementMessage(char commande_a_traiter) {
 
 	case CMD_FORWARD:
 		motordriver.goForward();
-    Serial.println("Avance");
 		break;
 	/*case CMD_RIGHT_FORWARD:
 		motordriver.goForward();
@@ -336,37 +320,30 @@ void traitementMessage(char commande_a_traiter) {
 		break;*/
 	case CMD_LEFT_FORWARD:
 		motordriver.goForward();
-    Serial.println("Avance Gauche");
 		leftForward();
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_BACK:
 		motordriver.goBackward();
 		rightForward();
-   Serial.println("Recule Droite");
 		motordriver.setSpeed(speed0, MOTORB);
 		break;
 	case CMD_LEFT_BACK:
 		motordriver.goBackward();
 		leftForward();
-    Serial.println("Recule Gauche");
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_FRONT:
 		motordriver.goRight();
-    Serial.println("Droite");
 		break;
 	case CMD_BACKWARD:
 		motordriver.goBackward();
-   Serial.println("Recule");
 		break;
 	case CMD_LEFT_FRONT:
 		motordriver.goLeft();
-   Serial.println("Gauche");
 		break;
 	case CMD_STOP:
 		motordriver.stop();
-   Serial.println("Stop");
 		break;
 	case CMD_OPT_DIST:
 		optDist();
@@ -386,7 +363,6 @@ void traitementMessage(char commande_a_traiter) {
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
-   Serial.println("Stop Manuel");
 		mode = "M";
 		writeAT("M");
 		break;
@@ -419,12 +395,12 @@ float * US_scan_Ar(float us4_dist, float us5_dist, float us6_dist) {
 	return US_dists_ar;
 }
 void detectionObstacles(float gauche, float centre, float droite) {
-	Serial.print(" Gauche : ");
+/*	Serial.print(" Gauche : ");
 	Serial.print(gauche);
 	Serial.print(", Face : ");
 	Serial.print(centre);
 	Serial.print(", Droite: ");
-	Serial.println(droite);
+	Serial.println(droite);*/
 
 	//CENTRE
 	if ((centre > tab_zone_param[4])) {
@@ -486,18 +462,18 @@ void detectionObstacles(float gauche, float centre, float droite) {
 		mgauche = gauche;
 		float minTemp = min(mdroite, min(mgauche, mface));
 		if (mdroite == minTemp) {
-			Serial.println("alerte Droite niveau " + alerteDroite);
+			//Serial.println("alerte Droite niveau " + alerteDroite);
 			//Tourner à gauche
 		}
 		if (mgauche == minTemp) {
-			Serial.println("alerte Gauche niveau " + alerteGauche);
+			//Serial.println("alerte Gauche niveau " + alerteGauche);
 			//Tourner à droite
 			if (alerteCentre >= NV_ALERTE_3) {
 
 			}
 		}
 		if (mface == minTemp) {
-			Serial.println("alerte Face niveau " + alerteCentre);
+			//Serial.println("alerte Face niveau " + alerteCentre);
 			minTemp = min(alerteDroite, alerteGauche);
 			if (alerteDroite == minTemp) {
 				switch (alerteDroite) {
@@ -523,11 +499,11 @@ void detectionObstacles(float gauche, float centre, float droite) {
 			}
 
 		}
-		Serial.println("Aucun");
+		//Serial.println("Aucun");
 
 	}
 	else {
-		Serial.println("Pas d'alerte");
+		//Serial.println("Pas d'alerte");
 	}
 
 
