@@ -3,7 +3,7 @@
 
 XXIISensorLib::XXIISensorLib()
 {
-	Serial.begin(115200);
+	Serial.begin(9600);
 	pinMode(US1_TRIGGER_PIN, OUTPUT);
 	pinMode(US1_ECHO_PIN, INPUT);
 	pinMode(US2_TRIGGER_PIN, OUTPUT);
@@ -39,4 +39,6 @@ float XXIISensorLib::getCM(int trigPin, int echoPin) {
 		digitalWrite(trigPin, LOW);
 		microsec = pulseIn(echoPin, HIGH);
 		return (microsec / 58);
+
+
 }

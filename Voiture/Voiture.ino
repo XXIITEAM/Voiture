@@ -1,4 +1,5 @@
-#include <XXIISensorLib.h>
+//#include <XXIISensorLib.h>
+#include "XXIISensorLib.h"
 #include <String.h>
 #include <MotorDriver.h>
 #include <stdlib.h>
@@ -80,9 +81,11 @@ void setup() {
 	s_connected = "CONNECTED";
 	status = 0;
 	motordriver.init();
-	motordriver.setSpeed(220, MOTORA);
-	motordriver.setSpeed(220, MOTORB);
+	motordriver.setSpeed(speed0, MOTORA);
+	motordriver.setSpeed(speed0, MOTORB);
 	chargerParametres();
+	US_scan_Av();
+	US_scan_Ar();
 	waitPairable();
 	waitConnected();
 	mode = "M";
@@ -111,33 +114,42 @@ unsigned long previousMillisTurn = 0;
 unsigned long currentMillis;
 
 void loop() {
-	commande_recue = readByte();
+	/*commande_recue = readByte();
 	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
 	if (getStatus() == PAIRABLE) {
 		motordriver.stop();
 		waitConnected();
 	}
-	/*currentMillis = millis();
+	currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
 		Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
 		previousMillisDIST = currentMillis;
 		
-	}*/
+	}
 	if (mode != "A" || commande_recue == 'M') {
 		if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE) {
 			if (commande_recue != commande_precedente) {
 				commande_precedente = commande_recue;
-				Serial.print("Nouvelle commande : ");
-				Serial.print(commande_recue);
-				Serial.print("\n");
 				traitementMessage(commande_recue);
 			}
 			commande_precedente = commande_recue;
 		}
 	}
 	else {
-		autonome(dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g);
+		US_scan_Av;
+		US_scan_Ar;
+		autonome();
+		delay(500);
+	}*/
+	currentMillis = millis();
+	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
+		US_scan_Av();
+		US_scan_Ar();
+		previousMillisDIST = currentMillis;
+
 	}
+
+
 }
 /*..........................................................*/
 /*..........................................................*/
@@ -218,7 +230,7 @@ void waitPairable() {
 	}
 }
 
-/*Write AT command to bluetooth module*/
+/*AT commandes*/
 bool writeAT(String cmd) {
 	Serial3.println(cmd);
 	//delay(500);
@@ -268,7 +280,8 @@ char readByte() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
-void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float ar_g) {
+void autonome() {
+	float av_g;
 	if (av_g >= tab_zone_param[4]) {
 			motordriver.goRight();
 			delay(TEMPO_MOVE);
@@ -300,7 +313,9 @@ void autonome(float av_g, float av_c, float av_d, float ar_d, float ar_c, float 
 			delay(TEMPO_MOVE);
 
 	}
-	
+	if (av_g == 0) {
+		Serial.println("Pas de mouvement");
+	}
 	return;
 }
 /*..........................................................*/
@@ -358,7 +373,7 @@ void traitementMessage(char commande_a_traiter) {
 		sauvegardeParametres();
 		break;
 	case CMD_GETVALUES:
-		listingBT();
+		//listingBT();
 		break;
 	case CMD_AUTONOME:
 		writeAT("A");
@@ -382,28 +397,46 @@ void traitementMessage(char commande_a_traiter) {
 /*					SCAN US FRONT							*/
 /*..........................................................*/
 /*..........................................................*/
-float * US_scan_Av(float us1_dist, float us2_dist, float us3_dist) {
+float * US_scan_Av() {
 	float dist_av_g, dist_av_c, dist_av_d;
 	Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
  
   float US_dists_av[] = { dist_av_g, dist_av_c, dist_av_d};
-  return US_dists_av;
+  Serial.println("Distances AV");
+  Serial.print("Gauche : ");
+  Serial.println(dist_av_g);
+  Serial.print("Centre : ");
+  Serial.println(dist_av_c);
+  Serial.print("Droite : ");
+  Serial.println(dist_av_d);
+  Serial.println("*--------------------*");
+  return;
+  //algoObstacles(dist_av_g, dist_av_c, dist_av_d);
 }
 
-float * US_scan_Ar(float us4_dist, float us5_dist, float us6_dist) {
-	float dist_av_g, dist_av_c, dist_av_d;
-	Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
+float * US_scan_Ar() {
+	float dist_ar_g, dist_ar_c, dist_ar_d;
+	Sensor.ScanAr(&dist_ar_g, &dist_ar_c, &dist_ar_d);
 
-	float US_dists_ar[] = {dist_av_g, dist_av_c, dist_av_d};
-	return US_dists_ar;
+	float US_dists_ar[] = {dist_ar_g, dist_ar_c, dist_ar_d};
+	//algoObstacles(dist_ar_g, dist_ar_c, dist_ar_d);
+	Serial.println("Distances AR");
+	Serial.print("Gauche : ");
+	Serial.println(dist_ar_g);
+	Serial.print("Centre : ");
+	Serial.println(dist_ar_c);
+	Serial.print("Droite : ");
+	Serial.println(dist_ar_d);
+	return;
+	//return US_dists_ar;
 }
-void detectionObstacles(float gauche, float centre, float droite) {
-/*	Serial.print(" Gauche : ");
-	Serial.print(gauche);
+void algoObstacles(float gauche, float centre, float droite) {
+	Serial.print(" Gauche : ");
+	Serial.println(gauche);
 	Serial.print(", Face : ");
-	Serial.print(centre);
+	Serial.println(centre);
 	Serial.print(", Droite: ");
-	Serial.println(droite);*/
+	Serial.println(droite);
 
 	//CENTRE
 	if ((centre > tab_zone_param[4])) {
@@ -540,10 +573,11 @@ void optDist() {
 	str_list_zone += "X";
 
 	Serial3.println(str_list_zone);
-	Serial.println(str_list_zone);
+	//Serial.println(str_list_zone);
 	return;
 
 }
+
 //Traite les param�tres de zones envoy�s par le client
 void traitementOptions(char cmd) {
 	String cmdStr = "";
@@ -582,7 +616,7 @@ void listingBT() {
 	float cmMsec = 12.0;
 	String distance = String(cmMsec);
 	String list = ("Z" "/" "Distance : " + distance + "/" + temperature() );
-	Serial3.println(list);
+	//Serial3.println(list);
 }
 /*..........................................................*/
 /*..........................................................*/
