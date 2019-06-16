@@ -60,3 +60,6 @@ Voiture/Debug/Voiture.ino.elf
 Voiture/Debug/Voiture.ino.hex
 Voiture/Debug/Voiture.ino.with_bootloader.hex
 Voiture/Debug/Voiture.with_bootloader.hex
+*.buildinfo
+*.elf
+*.hex
