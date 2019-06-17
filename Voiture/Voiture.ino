@@ -1,5 +1,5 @@
 //#include <XXIISensorLib.h>
-#include "XXIISensorLib.h"
+#include <XXIISensorLib.h>
 #include <String.h>
 #include <MotorDriver.h>
 #include <stdlib.h>
@@ -19,7 +19,6 @@
 #define ALERTE false
 
 XXIISensorLib Sensor;
-
 int alerteCentre;
 int alerteGauche;
 int alerteDroite;
@@ -57,7 +56,7 @@ DHT dht(DHTPIN, DHTTYPE);
 #define CMD_TEMP			'T'
 #define SPEED_STEPS 20
 //Définition vitesse
-uint8_t speed0 = 220;
+uint8_t speed0 = 100;
 //Définition STRUCT_MAGIC (test data)
 static const unsigned long STRUCT_MAGIC = 22;
 int tab_zone_param[5];
@@ -65,6 +64,10 @@ int8_t status;
 String s_connecting;
 String s_connected;
 String mode;
+boolean boolFront = false;
+boolean boolStop = false;
+boolean boolBackward = false;
+boolean boolCalib = false;
 struct optionStruct {
 	unsigned long magic;
 	int zone_4_max;
@@ -84,8 +87,6 @@ void setup() {
 	motordriver.setSpeed(speed0, MOTORA);
 	motordriver.setSpeed(speed0, MOTORB);
 	chargerParametres();
-	US_scan_Av();
-	US_scan_Ar();
 	waitPairable();
 	waitConnected();
 	mode = "M";
@@ -115,7 +116,6 @@ unsigned long currentMillis;
 
 void loop() {
 	/*commande_recue = readByte();
-	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
 	if (getStatus() == PAIRABLE) {
 		motordriver.stop();
 		waitConnected();
@@ -142,11 +142,12 @@ void loop() {
 		delay(500);
 	}*/
 	currentMillis = millis();
-	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
-		US_scan_Av();
-		US_scan_Ar();
+	if (currentMillis - previousMillisDIST >= 500) {
+		if (boolCalib == false) {
+			Serial.println(calibration());
+		}
+		
 		previousMillisDIST = currentMillis;
-
 	}
 
 
@@ -280,44 +281,170 @@ char readByte() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
-void autonome() {
-	float av_g;
-	if (av_g >= tab_zone_param[4]) {
-			motordriver.goRight();
-			delay(TEMPO_MOVE);
-	}
-
-	if (av_g < tab_zone_param[4] && av_g >= tab_zone_param[3]) {
-			motordriver.goForward();
-			delay(TEMPO_MOVE);
-
-	}
-	if (av_g < tab_zone_param[3] && av_g >= tab_zone_param[2]) {
-			motordriver.goForward();
-            Serial.println("Avance");
-			delay(TEMPO_MOVE);
-
-	}
-	if (av_g < tab_zone_param[2] && av_g >= tab_zone_param[1]) {
-			motordriver.goLeft();
-			delay(TEMPO_MOVE);
-
-	}
-	if (av_g < tab_zone_param[1] && av_g >= tab_zone_param[0]) {
-			motordriver.goBackward();
-			delay(TEMPO_MOVE);
-
-	}
-	if (av_g < tab_zone_param[0]) {
-			motordriver.goBackward();
-			delay(TEMPO_MOVE);
-
-	}
-	if (av_g == 0) {
-		Serial.println("Pas de mouvement");
-	}
-	return;
+void ScanUS() {
+	float avg, avc, avd, arg, arc, ard;
+	Sensor.ScanAv(&avg, &avc, &avd);
+	Sensor.ScanAr(&arg, &arc, &ard);
+	algoObstacles(avg, avc, avd, arg, arc, ard);
 }
+
+
+void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard) {
+	//Tableau distances
+	float tabDistances[6] =  { avg, avc, avd, arg, arc, ard };
+	//Tableau niveaux d'alerte
+	int tabAlerte[6];
+	//Attribution du niveau d'alerte
+	for (int i = 0; i < 6; i++) {
+		if ((tabDistances[i] > tab_zone_param[4])) {
+			tabAlerte[i] = NV_ALERTE_1;
+		}
+		if ((tabDistances[i] <= tab_zone_param[4]) && (tabDistances[i] > tab_zone_param[3])) {
+			tabAlerte[i] = NV_ALERTE_2;
+		}
+		if ((tabDistances[i] <= tab_zone_param[3]) && (tabDistances[i] > tab_zone_param[2])) {
+			tabAlerte[i] = NV_ALERTE_3;
+		}
+		if ((tabDistances[i] <= tab_zone_param[2]) && (tabDistances[i] > tab_zone_param[1])) {
+			tabAlerte[i] = NV_ALERTE_4;
+		}
+		if ((tabDistances[i] <= tab_zone_param[1]) && (tabDistances[i] > tab_zone_param[0])) {
+			tabAlerte[i] = NV_ALERTE_5;
+		}
+		if ((tabDistances[i] <= tab_zone_param[0])) {
+			tabAlerte[i] = 22.00;
+		}
+		if (tabAlerte[i] > NV_ALERTE_3) {
+			Serial.print("Capteur N° ");
+			Serial.println(i+1);
+			Serial.print("Alerte level : ");
+			Serial.println(tabAlerte[i]);
+		}
+		}
+	//Si distance min dans tout les capteurs < 50.00 cm on agit sinon on continue
+	if (min(tabDistances[0], min(tabDistances[1], min(tabDistances[2], min(tabDistances[3], min(tabDistances[4], tabDistances[5]))))) < float(50)) {
+		Serial.println("Entrée dans -50cm");
+		if (tabAlerte[0] > NV_ALERTE_4 || tabAlerte[1] > NV_ALERTE_4 || tabAlerte[2] > NV_ALERTE_4) {
+			//Alerte face
+				Serial.println("Entrée dans -50cm");
+				boolFront = false;
+				boolStop = false;
+				boolBackward = true;
+				motordriver.goBackward();
+			
+		}
+		else if (tabAlerte[3] > NV_ALERTE_4 || tabAlerte[4] > NV_ALERTE_4 || tabAlerte[5] > NV_ALERTE_4) {
+			//Alerte arrière
+			Serial.println("Entrée dans -50cm Arrière");
+				boolFront = true;
+				boolStop = false;
+				boolBackward = false;
+				motordriver.goForward();
+		}
+		else {
+			if (boolStop == false) {
+				boolFront = false;
+				boolStop = true;
+				boolBackward = false;
+				motordriver.stop();
+			}
+		}
+		
+
+	}
+	
+
+
+}
+
+void decouverte() {
+	long departMillis, stopMillis, execTime;
+	float avg, avc, avd, arg, arc, ard;
+	//Sensor.ScanAv(&avg, &avc, &avd);
+	//Sensor.ScanAr(&arg, &arc, &ard);
+	do {
+		departMillis = millis();
+		motordriver.goBackward();
+		//Sensor.ScanAr(&arg, &arc, &ard);
+	} while (arc > 30.00);
+	stopMillis = millis();
+	execTime = stopMillis - departMillis;
+	motordriver.stop();
+	do {
+		departMillis = millis();
+		motordriver.goForward();
+		//Sensor.ScanAv(&avg, &avc, &avd);
+	} while (avc > 30.00);
+	stopMillis = millis();
+	motordriver.stop();
+
+}
+//Fonction mesure dist/s
+float calibration() {
+	boolean second;
+	second = false;
+	long departMillis, stopMillis, execTime;
+	float avg, avc, oavc, avd, arg, arc, oarc, ard, cm_s, cm_s_av, cm_s_ar, cm_s_premier, cm_s_second;
+	for (int i = 0; i < 2; i++) {
+		Serial.print("bool state : ");
+		Serial.println(second);
+		Sensor.ScanAv(&avg, &avc, &avd);
+		Serial.print("cm_1 MAV : ");
+		Serial.println(avc);
+		oavc = avc;
+		departMillis = millis();
+		motordriver.goForward();
+		do {
+
+		} while (millis() - departMillis <= 5000);
+		stopMillis = millis();
+		motordriver.stop();
+		Sensor.ScanAv(&avg, &avc, &avd);
+		Serial.print("cm_2 MAV : ");
+		Serial.println(avc);
+		oavc = oavc - avc;
+		Serial.print("Distance parcourue : ");
+		Serial.println(oavc);
+		cm_s_av = oavc / 5;
+
+
+		Sensor.ScanAv(&avg, &avc, &avd);
+		Serial.print("cm_1 MAR : ");
+		Serial.println(avc);
+		oarc = avc;
+		departMillis = millis();
+		motordriver.goBackward();
+		do {
+
+		} while (millis() - departMillis <= 5000);
+		stopMillis = millis();
+		motordriver.stop();
+		Sensor.ScanAv(&avg, &avc, &avd);
+		Serial.print("cm_2 MAR : ");
+		Serial.println(avc);
+		oarc = avc - oarc;
+		Serial.print("Distance pacrcourue : ");
+		Serial.println(oarc);
+		cm_s_ar = oarc / 5;
+		if (second == true) {
+			cm_s_second = (cm_s_av + cm_s_ar) / 2;
+			Serial.print("cm/s second passage : ");
+			Serial.println(cm_s_second);
+		}
+		else {
+			cm_s_premier = (cm_s_av + cm_s_ar) / 2;
+			Serial.print("cm/s premier passage : ");
+			Serial.println(cm_s_premier);
+		}
+		second = true;
+
+	}
+	cm_s = (cm_s_premier + cm_s_second) / 2;
+	second = false;
+	boolCalib = true;
+	return cm_s;
+}
+
 /*..........................................................*/
 /*..........................................................*/
 /*					TRAITEMENT COMMANDE						*/
@@ -328,6 +455,9 @@ void traitementMessage(char commande_a_traiter) {
 	{
 
 	case CMD_FORWARD:
+		boolFront = true;
+		boolStop = false;
+		boolBackward = false;
 		motordriver.goForward();
 		break;
 	/*case CMD_RIGHT_FORWARD:
@@ -337,30 +467,51 @@ void traitementMessage(char commande_a_traiter) {
 		motordriver.setSpeed(speed0, MOTORB);
 		break;*/
 	case CMD_LEFT_FORWARD:
+		boolFront = true;
+		boolStop = false;
+		boolBackward = false;
 		motordriver.goForward();
 		leftForward();
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_BACK:
+		boolFront = false;
+		boolStop = false;
+		boolBackward = true;
 		motordriver.goBackward();
 		rightForward();
 		motordriver.setSpeed(speed0, MOTORB);
 		break;
 	case CMD_LEFT_BACK:
+		boolFront = false;
+		boolStop = false;
+		boolBackward = true;
 		motordriver.goBackward();
 		leftForward();
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_FRONT:
+		boolFront = true;
+		boolStop = false;
+		boolBackward = false;
 		motordriver.goRight();
 		break;
 	case CMD_BACKWARD:
+		boolFront = false;
+		boolStop = false;
+		boolBackward = true;
 		motordriver.goBackward();
 		break;
 	case CMD_LEFT_FRONT:
+		boolFront = false;
+		boolStop = false;
+		boolBackward = false;
 		motordriver.goLeft();
 		break;
 	case CMD_STOP:
+		boolFront = false;
+		boolStop = true;
+		boolBackward = false;
 		motordriver.stop();
 		break;
 	case CMD_OPT_DIST:
@@ -391,158 +542,6 @@ void traitementMessage(char commande_a_traiter) {
  break;
 	}
 	return;
-}
-/*..........................................................*/
-/*..........................................................*/
-/*					SCAN US FRONT							*/
-/*..........................................................*/
-/*..........................................................*/
-float * US_scan_Av() {
-	float dist_av_g, dist_av_c, dist_av_d;
-	Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
- 
-  float US_dists_av[] = { dist_av_g, dist_av_c, dist_av_d};
-  Serial.println("Distances AV");
-  Serial.print("Gauche : ");
-  Serial.println(dist_av_g);
-  Serial.print("Centre : ");
-  Serial.println(dist_av_c);
-  Serial.print("Droite : ");
-  Serial.println(dist_av_d);
-  Serial.println("*--------------------*");
-  return;
-  //algoObstacles(dist_av_g, dist_av_c, dist_av_d);
-}
-
-float * US_scan_Ar() {
-	float dist_ar_g, dist_ar_c, dist_ar_d;
-	Sensor.ScanAr(&dist_ar_g, &dist_ar_c, &dist_ar_d);
-
-	float US_dists_ar[] = {dist_ar_g, dist_ar_c, dist_ar_d};
-	//algoObstacles(dist_ar_g, dist_ar_c, dist_ar_d);
-	Serial.println("Distances AR");
-	Serial.print("Gauche : ");
-	Serial.println(dist_ar_g);
-	Serial.print("Centre : ");
-	Serial.println(dist_ar_c);
-	Serial.print("Droite : ");
-	Serial.println(dist_ar_d);
-	return;
-	//return US_dists_ar;
-}
-void algoObstacles(float gauche, float centre, float droite) {
-	Serial.print(" Gauche : ");
-	Serial.println(gauche);
-	Serial.print(", Face : ");
-	Serial.println(centre);
-	Serial.print(", Droite: ");
-	Serial.println(droite);
-
-	//CENTRE
-	if ((centre > tab_zone_param[4])) {
-		alerteCentre = NV_ALERTE_1;
-	}
-	if ((centre <= tab_zone_param[4]) && (centre > tab_zone_param[3])) {
-		alerteCentre = NV_ALERTE_2;
-	}
-	if ((centre <= tab_zone_param[3]) && (centre > tab_zone_param[2])) {
-		alerteCentre = NV_ALERTE_3;
-	}
-	if ((centre <= tab_zone_param[2]) && (centre > tab_zone_param[1])) {
-		alerteCentre = NV_ALERTE_4;
-	}
-	if ((centre <= tab_zone_param[1]) && (centre > tab_zone_param[0])) {
-		alerteCentre = NV_ALERTE_5;
-	}
-
-
-
-	if ((gauche > tab_zone_param[4])) {
-		alerteGauche = NV_ALERTE_1;
-	}
-	if ((gauche <= tab_zone_param[4]) && (gauche > tab_zone_param[3])) {
-		alerteGauche = NV_ALERTE_2;
-	}
-	if ((gauche <= tab_zone_param[3]) && (gauche > tab_zone_param[2])) {
-		alerteGauche = NV_ALERTE_3;
-
-	}
-	if ((gauche <= tab_zone_param[2]) && (gauche > tab_zone_param[1])) {
-		alerteGauche = NV_ALERTE_4;
-	}
-	if ((gauche <= tab_zone_param[1]) && (gauche > tab_zone_param[0])) {
-		alerteGauche = NV_ALERTE_5;
-	}
-
-	//DROITE
-	if ((droite > tab_zone_param[4])) {
-		alerteDroite = NV_ALERTE_1;
-	}
-	if ((droite <= tab_zone_param[4]) && (droite > tab_zone_param[3])) {
-		alerteDroite = NV_ALERTE_2;
-	}
-	if ((droite <= tab_zone_param[3]) && (droite > tab_zone_param[2])) {
-		alerteDroite = NV_ALERTE_3;
-	}
-	if ((droite <= tab_zone_param[2]) && (droite > tab_zone_param[1])) {
-		alerteDroite = NV_ALERTE_4;
-	}
-	if ((droite <= tab_zone_param[1]) && (droite > tab_zone_param[0])) {
-		alerteDroite = NV_ALERTE_5;
-	}
-
-	if ((alerteCentre >= NV_ALERTE_3) || (alerteDroite >= NV_ALERTE_3) || (alerteGauche >= NV_ALERTE_3)) {
-		float mface, mdroite, mgauche;
-		mface = centre;
-		mdroite = droite;
-		mgauche = gauche;
-		float minTemp = min(mdroite, min(mgauche, mface));
-		if (mdroite == minTemp) {
-			//Serial.println("alerte Droite niveau " + alerteDroite);
-			//Tourner à gauche
-		}
-		if (mgauche == minTemp) {
-			//Serial.println("alerte Gauche niveau " + alerteGauche);
-			//Tourner à droite
-			if (alerteCentre >= NV_ALERTE_3) {
-
-			}
-		}
-		if (mface == minTemp) {
-			//Serial.println("alerte Face niveau " + alerteCentre);
-			minTemp = min(alerteDroite, alerteGauche);
-			if (alerteDroite == minTemp) {
-				switch (alerteDroite) {
-				case NV_ALERTE_3:
-					break;
-				case NV_ALERTE_2:
-					break;
-				case NV_ALERTE_1:
-					break;
-				}
-				//reculer en s'écartant de l'obstacle (tourner à gauche)
-			}
-			else {
-				//reculer en s'écartant de l'obstacle (tourner à droite)
-				switch (alerteGauche) {
-				case NV_ALERTE_3:
-					break;
-				case NV_ALERTE_2:
-					break;
-				case NV_ALERTE_1:
-					break;
-				}
-			}
-
-		}
-		//Serial.println("Aucun");
-
-	}
-	else {
-		//Serial.println("Pas d'alerte");
-	}
-
-
 }
 void rightForward() {
 	motordriver.setSpeed(100, MOTORB);
