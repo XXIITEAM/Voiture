@@ -409,7 +409,7 @@ float calibration() {
 		} while (millis() - departMillis <= 5000);
 		stopMillis = millis();
 		motordriver.stop();
-		Sensor.ScanAv(&avg, &avc, &avd, &echo_direct);
+		Sensor.ScanAv(&avg, &avc, &avd);
 		Serial.print("cm_2 MAV : ");
 		Serial.println(avc);
 		oavc = oavc - avc;
@@ -418,7 +418,7 @@ float calibration() {
 		cm_s_av = oavc / 5;
 
 
-		Sensor.ScanAv(&avg, &avc, &avd, &echo_direct);
+		Sensor.ScanAv(&avg, &avc, &avd);
 		Serial.print("cm_1 MAR : ");
 		Serial.println(avc);
 		oarc = avc;
