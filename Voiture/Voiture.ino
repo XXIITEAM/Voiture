@@ -57,17 +57,21 @@ DHT dht(DHTPIN, DHTTYPE);
 #define SPEED_STEPS 20
 //Définition vitesse
 uint8_t speed0 = 100;
-//Définition STRUCT_MAGIC (test data)
+//Définition STRUCT_MAGIC (test données options)
 static const unsigned long STRUCT_MAGIC = 22;
 int tab_zone_param[5];
+//Bluetooth
 int8_t status;
 String s_connecting;
 String s_connected;
 String mode;
+//Etats
 boolean boolFront = false;
 boolean boolStop = false;
 boolean boolBackward = false;
 boolean boolCalib = false;
+
+//Structures
 struct optionStruct {
 	unsigned long magic;
 	int zone_4_max;
@@ -76,6 +80,10 @@ struct optionStruct {
 	int zone_2_min;
 	int zone_1_min;
 };
+struct paramStuct {
+	int struct_cm_s;
+};
+paramStuct ps_write;
 
 void setup() {
 	Serial.begin(115200);
@@ -383,8 +391,10 @@ void decouverte() {
 float calibration() {
 	boolean second;
 	second = false;
+	int echo_direct;
 	long departMillis, stopMillis, execTime;
-	float avg, avc, oavc, avd, arg, arc, oarc, ard, cm_s, cm_s_av, cm_s_ar, cm_s_premier, cm_s_second;
+	float avg, avc, avd, arg, arc, ard;
+	double cm_s, cm_s_av, oavc, oarc, cm_s_ar, cm_s_premier, cm_s_second;
 	for (int i = 0; i < 2; i++) {
 		Serial.print("bool state : ");
 		Serial.println(second);
@@ -399,7 +409,7 @@ float calibration() {
 		} while (millis() - departMillis <= 5000);
 		stopMillis = millis();
 		motordriver.stop();
-		Sensor.ScanAv(&avg, &avc, &avd);
+		Sensor.ScanAv(&avg, &avc, &avd, &echo_direct);
 		Serial.print("cm_2 MAV : ");
 		Serial.println(avc);
 		oavc = oavc - avc;
@@ -408,7 +418,7 @@ float calibration() {
 		cm_s_av = oavc / 5;
 
 
-		Sensor.ScanAv(&avg, &avc, &avd);
+		Sensor.ScanAv(&avg, &avc, &avd, &echo_direct);
 		Serial.print("cm_1 MAR : ");
 		Serial.println(avc);
 		oarc = avc;
@@ -442,6 +452,8 @@ float calibration() {
 	cm_s = (cm_s_premier + cm_s_second) / 2;
 	second = false;
 	boolCalib = true;
+	ps_write.struct_cm_s = cm_s;
+	EEPROM.put(100, ps_write);
 	return cm_s;
 }
 
@@ -669,9 +681,9 @@ String temperature() {
 	else
 	{
 		String temp = String(t);
-		String hygro = String(h);
+		String hydro = String(h);
     //float cmMsec = US_scan_Av();
-		String th = "Température: " + temp + "°C/" + "Hygrométrie: "+hygro+"%/";
+		String th = "Température: " + temp + "°C/" + "Hygrométrie: " + hydro +"%/";
 		return th;
 	}
 	

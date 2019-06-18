@@ -50,3 +50,7 @@ Voiture/Debug/*
 *.buildinfo
 *.elf
 *.hex
+Voiture/__vm/Compile.vmps.xml
+Voiture/__vm/Upload.vmps.xml
+Voiture/Release/board.buildinfo
+Voiture/__vm/Configuration.Release.vmps.xml
