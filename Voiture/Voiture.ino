@@ -1,4 +1,14 @@
-//#include <XXIISensorLib.h>
+/*!
+ * \file Voiture.ino
+ * \brief Programme voiture arduino
+ * \author XXII-TEAM
+ * \version 0.1
+ * \date 22 juin 2019
+ *
+ * Programme Arduino voiture commandée par application Android (BTArdroid).
+ *
+ */
+
 #include <XXIISensorLib.h>
 #include <String.h>
 #include <MotorDriver.h>
@@ -35,6 +45,7 @@ int alerteDroite;
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
+//Commandes
 #define CMD_INVALID     0xff
 #define CMD_FORWARD     'F'
 #define CMD_RIGHT_FRONT 'R'
@@ -55,23 +66,54 @@ DHT dht(DHTPIN, DHTTYPE);
 #define CMD_SAVE			'Q'
 #define CMD_TEMP			'T'
 #define SPEED_STEPS 20
+
 //Définition vitesse
 uint8_t speed0 = 100;
+
 //Définition STRUCT_MAGIC (test données options)
 static const unsigned long STRUCT_MAGIC = 22;
 int tab_zone_param[5];
+
 //Bluetooth
 int8_t status;
 String s_connecting;
 String s_connected;
 String mode;
+
 //Etats
-boolean boolFront = false;
+boolean boolForward = false;
 boolean boolStop = false;
 boolean boolBackward = false;
 boolean boolCalib = false;
 
-//Structures
+char commande_precedente = 'I';
+char commande_recue;
+char CMD_VIDE = NULL;
+#define CAR_STOP 0
+#define CAR_FORWARD 1
+#define CAR_BACK 2
+uint8_t car_status = CAR_STOP;
+uint8_t new_status = car_status;
+uint8_t bt_command;
+// Tempo
+const unsigned long TEMPO_DIST = 100;
+const unsigned long TEMPO_BT = 500;
+const unsigned long TEMPO_MOVE = 100;
+const unsigned long TEMPO_TURN = 200;
+unsigned long previousMillisBT = 0;
+unsigned long previousMillisDIST = 0;
+unsigned long previousMillisMove = 0;
+unsigned long previousMillisTurn = 0;
+unsigned long currentMillis;
+
+/*!
+ * \struct optionStruct
+ * \brief Structure int.
+ *
+ * Stockage des paramètres de configuration des distances.
+ * Récupéré et mis à jour par BTArdroid
+ *
+ */
 struct optionStruct {
 	unsigned long magic;
 	int zone_4_max;
@@ -80,11 +122,27 @@ struct optionStruct {
 	int zone_2_min;
 	int zone_1_min;
 };
+optionStruct os_write;
+/*!
+ * \struct paramStruct
+ * \brief Structure int.
+ *
+ * Stockage des paramètres de configuration des distances.
+ * Récupéré et mis à jour par BTArdroid
+ *
+ */
 struct paramStuct {
 	int struct_cm_s;
 };
 paramStuct ps_write;
 
+/*!
+ * \fn void setup()
+ * \brief Fonction Setup.
+ *
+ * \param Aucun.
+ * \return Aucun
+ */
 void setup() {
 	Serial.begin(115200);
 	Serial3.begin(115200);
@@ -100,28 +158,14 @@ void setup() {
 	mode = "M";
 	//dht.begin();
 }
-char commande_precedente = 'I';
-char commande_recue;
-char CMD_VIDE = NULL;
-#define CAR_STOP 0
-#define CAR_FORWARD 1
-#define CAR_BACK 2
-uint8_t car_status = CAR_STOP;
-uint8_t new_status = car_status;
 
-optionStruct os_write;
-uint8_t bt_command;
-// Tempo
-const unsigned long TEMPO_DIST = 100;
-const unsigned long TEMPO_BT = 500;
-const unsigned long TEMPO_MOVE = 100;
-const unsigned long TEMPO_TURN = 200;
-unsigned long previousMillisBT = 0;
-unsigned long previousMillisDIST = 0;
-unsigned long previousMillisMove = 0;
-unsigned long previousMillisTurn = 0;
-unsigned long currentMillis;
-
+/*!
+ * \fn void loop()
+ * \brief Fonction loop.
+ *
+ * \param Aucun.
+ * \return Aucun
+ */
 void loop() {
 	/*commande_recue = readByte();
 	if (getStatus() == PAIRABLE) {
@@ -165,46 +209,14 @@ void loop() {
 /*					BLUETOOTH								*/
 /*..........................................................*/
 /*..........................................................*/
-void waitConnected() {
-	char recvChar;
-	while (status != CONNECTED) {
-		if (Serial3.available()) {
-			recvChar = Serial3.read();
-			if (recvChar == '+') {
-				while (Serial3.available() < 10);
-				String recvString;
-				for (uint8_t i = 0; i < 10; i++) {
-					recvChar = Serial3.read();
-					recvString += recvChar;
-				}
-				if (recvString == s_connecting) status = CONNECTING;
-			}
-			if (recvChar == 'C') {
-				while (Serial3.available() < 8);
-				String recvString;
-				recvString += recvChar;
-				for (uint8_t i = 0; i < 8; i++) {
-					recvChar = Serial3.read();
-					recvString += recvChar;
-				}
-				if (recvString == s_connected) status = CONNECTED;
-			}
-		}
-		else {
-			if (testAT()) status = PAIRABLE;
-			else {
-				//delay(200);
-				if (testAT()) status = PAIRABLE;
-				else status = CONNECTED;
-			}
-		}
-	}
-}
 
-int8_t getStatus() {
-	return status;
-}
-
+/*!
+ * \fn void waitPairable()
+ * \brief Fonction attente BT.
+ *
+ * \param Aucun.
+ * \return Aucun
+ */
 void waitPairable() {
 	char recvChar;
 	while (status != PAIRABLE) {
@@ -238,10 +250,72 @@ void waitPairable() {
 		}
 	}
 }
+/*!
+ * \fn void waitConnected()
+ * \brief Fonction connexion BT.
+ *
+ * \param Aucun.
+ * \return Aucun
+ */
+void waitConnected() {
+	char recvChar;
+	while (status != CONNECTED) {
+		if (Serial3.available()) {
+			recvChar = Serial3.read();
+			if (recvChar == '+') {
+				while (Serial3.available() < 10);
+				String recvString;
+				for (uint8_t i = 0; i < 10; i++) {
+					recvChar = Serial3.read();
+					recvString += recvChar;
+				}
+				if (recvString == s_connecting) status = CONNECTING;
+			}
+			if (recvChar == 'C') {
+				while (Serial3.available() < 8);
+				String recvString;
+				recvString += recvChar;
+				for (uint8_t i = 0; i < 8; i++) {
+					recvChar = Serial3.read();
+					recvString += recvChar;
+				}
+				if (recvString == s_connected) status = CONNECTED;
+			}
+		}
+		else {
+			if (testAT()) status = PAIRABLE;
+			else {
+				if (testAT()) status = PAIRABLE;
+				else status = CONNECTED;
+			}
+		}
+	}
+}
 
-/*AT commandes*/
-bool writeAT(String cmd) {
-	Serial3.println(cmd);
+int8_t getStatus() {
+	return status;
+}
+
+void clearBuffer() {
+	char recvChar;
+	while (Serial3.available())recvChar = Serial3.read();
+}
+
+/*..........................................................*/
+/*..........................................................*/
+/*					BLUETOOTH								*/
+/*..........................................................*/
+/*..........................................................*/
+
+/*!
+ * \fn bool writeAT(String cmdAT)
+ * \brief Fonction commandes AT BT.
+ *
+ * \param String cmdAT.
+ * \return Trus/False
+ */
+bool writeAT(String cmdAT) {
+	Serial3.println(cmdAT);
 	//delay(500);
 	if (Serial3.available() > 1) {
 		String recvString;
@@ -256,17 +330,21 @@ bool writeAT(String cmd) {
 	}
 	else return false;
 }
-bool writeMsg(char cmd) {
-	Serial3.println(cmd);
-}
 bool testAT() {
 	clearBuffer();
 	return writeAT("AT");
 }
-void clearBuffer() {
-	char recvChar;
-	while (Serial3.available())recvChar = Serial3.read();
+/*!
+ * \fn bool writeMsg(String cmd)
+ * \brief Fonction envoie messages BT.
+ *
+ * \param String cmd.
+ * \return Aucun
+ */
+bool writeMsg(String cmd) {
+	Serial3.println(cmd);
 }
+
 
 char readByte() {
 	if (status != CONNECTED) return 0xff;
@@ -274,10 +352,10 @@ char readByte() {
 	{
 		char recvChar;
 		recvChar = Serial3.read();
-		if (recvChar == '+')//the remote control disconnect the car
+		if (recvChar == '+')//Char deconnexion BT "+"
 		{
 			waitPairable();
-			return 0xff;
+			return 0xff;//Char no connect
 		}
 		else return recvChar;
 	}
@@ -289,6 +367,14 @@ char readByte() {
 /*						MODE AUTONOME						*/
 /*..........................................................*/
 /*..........................................................*/
+
+/*!
+ * \fn void ScanUS()
+ * \brief Fonction appel scanUS lib XXIISensorLib.
+ *
+ * \param Aucun
+ * \return Lance algoObstacles(avg, avc, avd, arg, arc, ard);
+ */
 void ScanUS() {
 	float avg, avc, avd, arg, arc, ard;
 	Sensor.ScanAv(&avg, &avc, &avd);
@@ -296,7 +382,13 @@ void ScanUS() {
 	algoObstacles(avg, avc, avd, arg, arc, ard);
 }
 
-
+/*!
+ * \fn void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
+ * \brief Fonction comportement si obstacle.
+ *
+ * \param float avg, float avc, float avd, float arg, float arc, float ard
+ * \return Aucun
+ */
 void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard) {
 	//Tableau distances
 	float tabDistances[6] =  { avg, avc, avd, arg, arc, ard };
@@ -304,38 +396,38 @@ void algoObstacles(float avg, float avc, float avd, float arg, float arc, float 
 	int tabAlerte[6];
 	//Attribution du niveau d'alerte
 	for (int i = 0; i < 6; i++) {
-		if ((tabDistances[i] > tab_zone_param[4])) {
-			tabAlerte[i] = NV_ALERTE_1;
+			if ((tabDistances[i] > tab_zone_param[4])) {
+				tabAlerte[i] = NV_ALERTE_1;
+			}
+			if ((tabDistances[i] <= tab_zone_param[4]) && (tabDistances[i] > tab_zone_param[3])) {
+				tabAlerte[i] = NV_ALERTE_2;
+			}
+			if ((tabDistances[i] <= tab_zone_param[3]) && (tabDistances[i] > tab_zone_param[2])) {
+				tabAlerte[i] = NV_ALERTE_3;
+			}
+			if ((tabDistances[i] <= tab_zone_param[2]) && (tabDistances[i] > tab_zone_param[1])) {
+				tabAlerte[i] = NV_ALERTE_4;
+			}
+			if ((tabDistances[i] <= tab_zone_param[1]) && (tabDistances[i] > tab_zone_param[0])) {
+				tabAlerte[i] = NV_ALERTE_5;
+			}
+			if ((tabDistances[i] <= tab_zone_param[0])) {
+				tabAlerte[i] = 22.00;
+			}
+			if (tabAlerte[i] > NV_ALERTE_3) {
+				Serial.print("Capteur N° ");
+				Serial.println(i+1);
+				Serial.print("Alerte level : ");
+				Serial.println(tabAlerte[i]);
+			}
 		}
-		if ((tabDistances[i] <= tab_zone_param[4]) && (tabDistances[i] > tab_zone_param[3])) {
-			tabAlerte[i] = NV_ALERTE_2;
-		}
-		if ((tabDistances[i] <= tab_zone_param[3]) && (tabDistances[i] > tab_zone_param[2])) {
-			tabAlerte[i] = NV_ALERTE_3;
-		}
-		if ((tabDistances[i] <= tab_zone_param[2]) && (tabDistances[i] > tab_zone_param[1])) {
-			tabAlerte[i] = NV_ALERTE_4;
-		}
-		if ((tabDistances[i] <= tab_zone_param[1]) && (tabDistances[i] > tab_zone_param[0])) {
-			tabAlerte[i] = NV_ALERTE_5;
-		}
-		if ((tabDistances[i] <= tab_zone_param[0])) {
-			tabAlerte[i] = 22.00;
-		}
-		if (tabAlerte[i] > NV_ALERTE_3) {
-			Serial.print("Capteur N° ");
-			Serial.println(i+1);
-			Serial.print("Alerte level : ");
-			Serial.println(tabAlerte[i]);
-		}
-		}
-	//Si distance min dans tout les capteurs < 50.00 cm on agit sinon on continue
+	//Si distance min d'un des 6 capteurs < 50.00 cm on agit sinon on continue
 	if (min(tabDistances[0], min(tabDistances[1], min(tabDistances[2], min(tabDistances[3], min(tabDistances[4], tabDistances[5]))))) < float(50)) {
 		Serial.println("Entrée dans -50cm");
 		if (tabAlerte[0] > NV_ALERTE_4 || tabAlerte[1] > NV_ALERTE_4 || tabAlerte[2] > NV_ALERTE_4) {
 			//Alerte face
 				Serial.println("Entrée dans -50cm");
-				boolFront = false;
+				boolForward = false;
 				boolStop = false;
 				boolBackward = true;
 				motordriver.goBackward();
@@ -344,14 +436,14 @@ void algoObstacles(float avg, float avc, float avd, float arg, float arc, float 
 		else if (tabAlerte[3] > NV_ALERTE_4 || tabAlerte[4] > NV_ALERTE_4 || tabAlerte[5] > NV_ALERTE_4) {
 			//Alerte arrière
 			Serial.println("Entrée dans -50cm Arrière");
-				boolFront = true;
+				boolForward = true;
 				boolStop = false;
 				boolBackward = false;
 				motordriver.goForward();
 		}
 		else {
 			if (boolStop == false) {
-				boolFront = false;
+				boolForward = false;
 				boolStop = true;
 				boolBackward = false;
 				motordriver.stop();
@@ -364,7 +456,13 @@ void algoObstacles(float avg, float avc, float avd, float arg, float arc, float 
 
 
 }
-
+/*!
+ * \fn void decouverte()
+ * \brief Fonction découverte environnement.
+ *
+ * \param Aucun
+ * \return Aucun
+ */
 void decouverte() {
 	long departMillis, stopMillis, execTime;
 	float avg, avc, avd, arg, arc, ard;
@@ -387,20 +485,28 @@ void decouverte() {
 	motordriver.stop();
 
 }
-//Fonction mesure dist/s
+
+/*!
+ * \fn float calibration()
+ * \brief Fonction calibration vitesse vh (cm/s)
+ * Placer le véhicule face à un mur (1 ou 2 m)
+ *
+ * \param Aucun
+ * \return cm_s
+ */
 float calibration() {
+	//bool second passage (cycle mesure > MAV > mesure > MAR > mesure > calcul) x2
 	boolean second;
 	second = false;
+	//Test récup echo indirect
 	int echo_direct;
+	//var temps
 	long departMillis, stopMillis, execTime;
 	float avg, avc, avd, arg, arc, ard;
 	double cm_s, cm_s_av, oavc, oarc, cm_s_ar, cm_s_premier, cm_s_second;
+	//Boucle calibration
 	for (int i = 0; i < 2; i++) {
-		Serial.print("bool state : ");
-		Serial.println(second);
 		Sensor.ScanAv(&avg, &avc, &avd);
-		Serial.print("cm_1 MAV : ");
-		Serial.println(avc);
 		oavc = avc;
 		departMillis = millis();
 		motordriver.goForward();
@@ -410,17 +516,11 @@ float calibration() {
 		stopMillis = millis();
 		motordriver.stop();
 		Sensor.ScanAv(&avg, &avc, &avd);
-		Serial.print("cm_2 MAV : ");
-		Serial.println(avc);
 		oavc = oavc - avc;
-		Serial.print("Distance parcourue : ");
-		Serial.println(oavc);
 		cm_s_av = oavc / 5;
 
 
 		Sensor.ScanAv(&avg, &avc, &avd);
-		Serial.print("cm_1 MAR : ");
-		Serial.println(avc);
 		oarc = avc;
 		departMillis = millis();
 		motordriver.goBackward();
@@ -430,30 +530,25 @@ float calibration() {
 		stopMillis = millis();
 		motordriver.stop();
 		Sensor.ScanAv(&avg, &avc, &avd);
-		Serial.print("cm_2 MAR : ");
-		Serial.println(avc);
 		oarc = avc - oarc;
-		Serial.print("Distance pacrcourue : ");
-		Serial.println(oarc);
 		cm_s_ar = oarc / 5;
 		if (second == true) {
 			cm_s_second = (cm_s_av + cm_s_ar) / 2;
-			Serial.print("cm/s second passage : ");
-			Serial.println(cm_s_second);
 		}
 		else {
 			cm_s_premier = (cm_s_av + cm_s_ar) / 2;
-			Serial.print("cm/s premier passage : ");
-			Serial.println(cm_s_premier);
 		}
 		second = true;
-
 	}
 	cm_s = (cm_s_premier + cm_s_second) / 2;
 	second = false;
+	//bool calib OK
 	boolCalib = true;
+	//Stock la variable en structure
 	ps_write.struct_cm_s = cm_s;
+	//Enregistrement de la variable sur l'EEPROM
 	EEPROM.put(100, ps_write);
+	//On renvoi la mesure
 	return cm_s;
 }
 
@@ -462,12 +557,20 @@ float calibration() {
 /*					TRAITEMENT COMMANDE						*/
 /*..........................................................*/
 /*..........................................................*/
+
+/*!
+ * \fn void traitementMessage(char commande_a_traiter)
+ * \brief Fonction traitement du message reçu (BTArduino)
+ *
+ * \param char commande_a_traiter
+ * \return Aucun
+ */
 void traitementMessage(char commande_a_traiter) {
 	switch (commande_a_traiter)
 	{
 
 	case CMD_FORWARD:
-		boolFront = true;
+		boolForward = true;
 		boolStop = false;
 		boolBackward = false;
 		motordriver.goForward();
@@ -479,7 +582,7 @@ void traitementMessage(char commande_a_traiter) {
 		motordriver.setSpeed(speed0, MOTORB);
 		break;*/
 	case CMD_LEFT_FORWARD:
-		boolFront = true;
+		boolForward = true;
 		boolStop = false;
 		boolBackward = false;
 		motordriver.goForward();
@@ -487,7 +590,7 @@ void traitementMessage(char commande_a_traiter) {
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_BACK:
-		boolFront = false;
+		boolForward = false;
 		boolStop = false;
 		boolBackward = true;
 		motordriver.goBackward();
@@ -495,7 +598,7 @@ void traitementMessage(char commande_a_traiter) {
 		motordriver.setSpeed(speed0, MOTORB);
 		break;
 	case CMD_LEFT_BACK:
-		boolFront = false;
+		boolForward = false;
 		boolStop = false;
 		boolBackward = true;
 		motordriver.goBackward();
@@ -503,25 +606,25 @@ void traitementMessage(char commande_a_traiter) {
 		motordriver.setSpeed(speed0, MOTORA);
 		break;
 	case CMD_RIGHT_FRONT:
-		boolFront = true;
+		boolForward = true;
 		boolStop = false;
 		boolBackward = false;
 		motordriver.goRight();
 		break;
 	case CMD_BACKWARD:
-		boolFront = false;
+		boolForward = false;
 		boolStop = false;
 		boolBackward = true;
 		motordriver.goBackward();
 		break;
 	case CMD_LEFT_FRONT:
-		boolFront = false;
+		boolForward = false;
 		boolStop = false;
 		boolBackward = false;
 		motordriver.goLeft();
 		break;
 	case CMD_STOP:
-		boolFront = false;
+		boolForward = false;
 		boolStop = true;
 		boolBackward = false;
 		motordriver.stop();
@@ -539,13 +642,13 @@ void traitementMessage(char commande_a_traiter) {
 		//listingBT();
 		break;
 	case CMD_AUTONOME:
-		writeAT("A");
+		writeMsg("A");
 		mode = "A";
 		break;
 	case CMD_MANUELLE:
 		motordriver.stop();
 		mode = "M";
-		writeAT("M");
+		writeMsg("M");
 		break;
 	case CMD_TEMP:
 		//temperature();
@@ -560,7 +663,6 @@ void rightForward() {
 	return;
 
 }
-
 void leftForward() {
 	motordriver.setSpeed(100, MOTORA);
 	return;
@@ -572,31 +674,39 @@ void leftForward() {
 /*					PARAMETRAGE ZONES						*/
 /*..........................................................*/
 /*..........................................................*/
-//Envoi des param�tres (Distances zones) � l'application android
+
+/*!
+ * \fn void optDist()
+ * \brief Envoi des parametres (Distances zones) a BTArduino
+ *
+ * \param Aucun
+ * \return Aucun
+ */
 void optDist() {
 	chargerParametres();
 	String str_list_zone;
 	str_list_zone += "O/";
 	for (int i = 0; i < 5; i++) {
 		str_list_zone += String(tab_zone_param[i]) + CMD_DELIM;
-
 	}
 	str_list_zone += "X";
-
-	Serial3.println(str_list_zone);
-	//Serial.println(str_list_zone);
+	writeMsg(str_list_zone);
 	return;
-
 }
 
-//Traite les param�tres de zones envoy�s par le client
+/*!
+ * \fn void traitementOptions(char cmd)
+ * \brief Traitement du String parametres reçu de BTArduino
+ *
+ * \param char cmd
+ * \return Aucun
+ */
 void traitementOptions(char cmd) {
 	String cmdStr = "";
 	char param = cmd;
 	char cmd1[5];
 	int icmd;
 	int i = 0;
-	
 	while (param != STOP_CMD) {
 		if (param == CMD_WRITE) {
 			param = Serial3.read();
@@ -615,25 +725,41 @@ void traitementOptions(char cmd) {
 			param = Serial3.read();
 		}
 	}
-
-	Serial3.println("W");
+	writeMsg("W");
 }
 /*..........................................................*/
 /*..........................................................*/
 /*						ENVOI DONNEES						*/
 /*..........................................................*/
 /*..........................................................*/
+
+/*!
+ * \fn void listingBT()
+ * \brief Envoie des données capteurs a BTArduino
+ *
+ * \param Aucun
+ * \return Aucun
+ */
 void listingBT() {
 	float cmMsec = 12.0;
 	String distance = String(cmMsec);
 	String list = ("Z" "/" "Distance : " + distance + "/" + temperature() );
-	//Serial3.println(list);
+	//writeMsg(list);
 }
+
 /*..........................................................*/
 /*..........................................................*/
 /*					SAUVEGARDE EEPROM						*/
 /*..........................................................*/
 /*..........................................................*/
+
+/*!
+ * \fn void sauvegardeParametres()
+ * \brief Sauvegarde des parametres utilisateurs de tableau parametres vers EEPROM
+ *
+ * \param Aucun
+ * \return Aucun
+ */
 void sauvegardeParametres() {
 	os_write.magic = STRUCT_MAGIC;
 	os_write.zone_1_min = tab_zone_param[0];
@@ -642,8 +768,16 @@ void sauvegardeParametres() {
 	os_write.zone_4_min = tab_zone_param[3];
 	os_write.zone_4_max = tab_zone_param[4] ;
 	EEPROM.put(0, os_write);
-	writeAT("Q");
+	writeMsg("Q");
 }
+
+/*!
+ * \fn void chargerParametres()
+ * \brief Chargement des parametres utilisateurs de EEPROM vers tableau de parametres
+ *
+ * \param Aucun
+ * \return Aucun
+ */
 void chargerParametres() {
 	Serial.println("charger param");
 	EEPROM.get(0, os_write);
@@ -663,6 +797,14 @@ void chargerParametres() {
 	// Mise � jour du tableau de param�tres
 	updateTableauParam();
 }
+
+/*!
+ * \fn void updateTableauParam()
+ * \brief Mise à jour du tableau de parametres a partir de EEPROM
+ *
+ * \param Aucun
+ * \return Aucun
+ */
 void updateTableauParam() {
 	Serial.println("update tab param");
 	tab_zone_param[0] = os_write.zone_1_min;
@@ -671,6 +813,14 @@ void updateTableauParam() {
 	tab_zone_param[3] = os_write.zone_4_min;
 	tab_zone_param[4] = os_write.zone_4_max;
 }
+
+/*!
+ * \fn String temperature()
+ * \brief Récupération temperature et humidite pour envoie vers BTArdroid
+ *
+ * \param Aucun
+ * \return String th
+ */
 String temperature() {
 	float h = dht.readHumidity();
 	float t = dht.readTemperature();
@@ -682,7 +832,6 @@ String temperature() {
 	{
 		String temp = String(t);
 		String hydro = String(h);
-    //float cmMsec = US_scan_Av();
 		String th = "Température: " + temp + "°C/" + "Hygrométrie: " + hydro +"%/";
 		return th;
 	}
