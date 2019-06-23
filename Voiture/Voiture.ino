@@ -8,8 +8,8 @@
  * Programme Arduino voiture commandée par application Android (BTArdroid).
  *
  */
-
-#include <XXIISensorLib.h>
+#include "Arduino.h"
+#include "Lib/XXIISensorLib/XXIISensorLib.h"
 #include <String.h>
 #include <MotorDriver.h>
 #include <stdlib.h>
@@ -32,7 +32,8 @@ XXIISensorLib Sensor;
 int alerteCentre;
 int alerteGauche;
 int alerteDroite;
-//BT
+
+//Etats bluetooth
 #define INITIALIZING 0
 #define READY        1
 #define INQUIRING    2

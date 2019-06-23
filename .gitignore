@@ -57,3 +57,6 @@ Voiture/__vm/Configuration.Release.vmps.xml
 Voiture/__vm/Configuration.Release.vmps.xml
 Voiture/__vm/Compile.vmps.xml
 Voiture/Release/board.buildinfo
+Sortie-MicroBuild.txt
+Voiture/__vm/Compile.vmps.xml
+Voiture/__vm/Upload.vmps.xml
