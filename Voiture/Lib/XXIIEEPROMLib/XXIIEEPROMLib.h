@@ -9,17 +9,35 @@
 	#include "WProgram.h"
 #endif
 #include <EEPROM.h>
-
+	//Définition STRUCT_MAGIC (test données options)
+static const unsigned long STRUCT_MAGIC = 22;
+struct optionStruct {
+	unsigned long magic;
+	int zone_4_max;
+	int zone_4_min;
+	int zone_3_min;
+	int zone_2_min;
+	int zone_1_min;
+};
 class XXIIEEPROMLibClass
 {
- protected:
+protected:
 
 
- public:
-	void init();
-	void sauvegardeParametres(unsigned long *magic, int *zone_1_min, int *zone_2_min, int *zone_3_min, int *zone_4_min, int *zone_4_max);
-	void chargerParametres(unsigned long *magic, int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max);
-	//void updateTableauParam();
+public:
+	optionStruct os_write;
+	// --------------------------------------------------------------------------------
+	/// <summary>
+	/// @struct optionStruct
+	/// @brief Structure int.
+	/// Stockage des paramètres de configuration des distances.
+	/// Récupéré et mis à jour par BTArdroid
+	/// </summary>
+	// --------------------------------------------------------------------------------
+	void XXIIEEPROMLibClass::init();
+	void XXIIEEPROMLibClass::sauvegardeParametres(unsigned long* magic, int *zone_1_min, int *zone_2_min, int *zone_3_min, int *zone_4_min, int *zone_4_max);
+	void XXIIEEPROMLibClass::chargerParametres(unsigned long* magic, int *zone_1_min, int *zone_2_min, int *zone_3_min, int *zone_4_min, int *zone_4_max);
+	void XXIIEEPROMLibClass::getEEPROMParam(int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max);
 
 };
 

@@ -3,23 +3,20 @@
 // 
 
 #include "XXIIEEPROMLib.h"
-
 void XXIIEEPROMLibClass::init()
 {
 
 
 }
 
-
-XXIIEEPROMLibClass XXIIEEPROMLib;
-
+//XXIIBluetoothLibClass bluetoothEEPROM;
 // ********************************************************************************
 	/// <summary>
 	/// @fn void sauvegardeParametres()
 	/// @brief Sauvegarde des parametres utilisateurs de tableau parametres vers EEPROM
 	/// </summary>
 	// ********************************************************************************
-void XXIIEEPROMLibClass::sauvegardeParametres(unsigned long *magic, int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max) {
+void XXIIEEPROMLibClass::sauvegardeParametres(unsigned long* magic, int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max) {
 	os_write.magic = STRUCT_MAGIC;
 	os_write.zone_1_min = *zone_1_min;
 	os_write.zone_2_min = *zone_2_min;
@@ -27,7 +24,7 @@ void XXIIEEPROMLibClass::sauvegardeParametres(unsigned long *magic, int* zone_1_
 	os_write.zone_4_min = *zone_4_min;
 	os_write.zone_4_max = *zone_4_max;
 	EEPROM.put(0, os_write);
-	writeMsg("Q");
+	Serial3.println("Q");
 }
 
 // ********************************************************************************
@@ -36,7 +33,7 @@ void XXIIEEPROMLibClass::sauvegardeParametres(unsigned long *magic, int* zone_1_
 /// @brief Chargement des parametres utilisateurs de EEPROM vers tableau de parametres
 /// </summary>
 // ********************************************************************************
-void XXIIEEPROMLibClass::chargerParametres(unsigned long *magic, int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max) {
+void XXIIEEPROMLibClass::chargerParametres(unsigned long* magic, int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max) {
 	EEPROM.get(0, os_write);
 	// Test initialisation de la m�moire
 	byte erreur = os_write.magic != STRUCT_MAGIC;
@@ -49,9 +46,10 @@ void XXIIEEPROMLibClass::chargerParametres(unsigned long *magic, int* zone_1_min
 		os_write.zone_3_min = 50;
 		os_write.zone_4_min = 70;
 		os_write.zone_4_max = 100;
+		//*magic = STRUCT_MAGIC;
 	}
 	// Mise � jour du tableau de param�tres
-	//updateTableauParam();
+	getEEPROMParam(zone_1_min , zone_2_min, zone_3_min, zone_4_min, zone_4_max);
 }
 
 // ********************************************************************************
@@ -60,11 +58,11 @@ void XXIIEEPROMLibClass::chargerParametres(unsigned long *magic, int* zone_1_min
 /// @brief Mise à jour du tableau de parametres a partir de EEPROM
 /// </summary>
 // ********************************************************************************
-/*void XXIIEEPROMLibClass::updateTableauParam() {
-	Serial.println("update tab param");
-	tab_zone_param[0] = os_write.zone_1_min;
-	tab_zone_param[1] = os_write.zone_2_min;
-	tab_zone_param[2] = os_write.zone_3_min;
-	tab_zone_param[3] = os_write.zone_4_min;
-	tab_zone_param[4] = os_write.zone_4_max;
-}*/
+void XXIIEEPROMLibClass::getEEPROMParam(int* zone_1_min, int* zone_2_min, int* zone_3_min, int* zone_4_min, int* zone_4_max) {
+	*zone_1_min = os_write.zone_1_min;
+	*zone_2_min = os_write.zone_2_min;
+	*zone_3_min = os_write.zone_3_min;
+	*zone_4_min = os_write.zone_4_min;
+	*zone_4_max = os_write.zone_4_max;
+}
+XXIIEEPROMLibClass XXIIEEPROMLib;

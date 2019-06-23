@@ -1,12 +1,23 @@
-#include "XXIIAutonomeLib.h"
+#include "XXIIVehiculeLib.h"
 
 
-void XXIIAutonomeLibClass::init()
+void XXIIVehiculeLibClass::init()
 {
 
 
 }
-
+	// ********************************************************************************
+	/// <summary>
+	/// @fn void ScanUS()
+	/// @brief Fonction appel scanUS lib XXIISensorLib.
+	/// </summary>
+	// ********************************************************************************
+	void XXIIVehiculeLibClass::ScanUS() {
+		float avg, avc, avd, arg, arc, ard;
+		vehicule.Sensor.ScanAv(&avg, &avc, &avd);
+		vehicule.Sensor.ScanAr(&arg, &arc, &ard);
+		vehicule.algoObstacles(avg, avc, avd, arg, arc, ard);
+	}
 // ********************************************************************************
 /// <summary>
 /// @fn void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
@@ -20,9 +31,10 @@ void XXIIAutonomeLibClass::init()
 /// <param name="ard">Distance capteur arrière droit</param>
 // ********************************************************************************
 
-
-void XXIIAutonomeLibClass::algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
+void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
 {
+	int zone_1_min, zone_2_min, zone_3_min, zone_4_min, zone_4_max;
+	eepromAutonomeLib.getEEPROMParam(&zone_1_min, &zone_2_min, &zone_3_min, &zone_4_min, &zone_4_max);
 	//Tableau distances
 	float tabDistances[6] = { avg, avc, avd, arg, arc, ard };
 	//Tableau niveaux d'alerte
@@ -30,22 +42,22 @@ void XXIIAutonomeLibClass::algoObstacles(float avg, float avc, float avd, float 
 
 	//Attribution du niveau d'alerte
 	for (int i = 0; i < 6; i++) {
-		if ((tabDistances[i] > tab_zone_param[4])) {
+		if ((tabDistances[i] > zone_4_max)) {
 			tabAlerte[i] = NV_ALERTE_1;
 		}
-		if ((tabDistances[i] <= tab_zone_param[4]) && (tabDistances[i] > tab_zone_param[3])) {
+		if ((tabDistances[i] <= zone_4_max) && (tabDistances[i] > zone_4_min)) {
 			tabAlerte[i] = NV_ALERTE_2;
 		}
-		if ((tabDistances[i] <= tab_zone_param[3]) && (tabDistances[i] > tab_zone_param[2])) {
+		if ((tabDistances[i] <= zone_4_min) && (tabDistances[i] > zone_3_min)) {
 			tabAlerte[i] = NV_ALERTE_3;
 		}
-		if ((tabDistances[i] <= tab_zone_param[2]) && (tabDistances[i] > tab_zone_param[1])) {
+		if ((tabDistances[i] <= zone_3_min) && (tabDistances[i] > zone_2_min)) {
 			tabAlerte[i] = NV_ALERTE_4;
 		}
-		if ((tabDistances[i] <= tab_zone_param[1]) && (tabDistances[i] > tab_zone_param[0])) {
+		if ((tabDistances[i] <= zone_2_min) && (tabDistances[i] > zone_1_min)) {
 			tabAlerte[i] = NV_ALERTE_5;
 		}
-		if ((tabDistances[i] <= tab_zone_param[0])) {
+		if ((tabDistances[i] <= zone_1_min)) {
 			tabAlerte[i] = 22.00;
 		}
 		if (tabAlerte[i] > NV_ALERTE_3) {
@@ -92,7 +104,7 @@ void XXIIAutonomeLibClass::algoObstacles(float avg, float avc, float avd, float 
 	/// @brief Fonction découverte environnement.
 	/// </summary>
 	// ********************************************************************************
-	void XXIIAutonomeLibClass::decouverte() {
+	void XXIIVehiculeLibClass::decouverte() {
 		long departMillis, stopMillis, execTime;
 		float avg, avc, avd, arg, arc, ard;
 		//Sensor.ScanAv(&avg, &avc, &avd);
@@ -124,9 +136,9 @@ void XXIIAutonomeLibClass::algoObstacles(float avg, float avc, float avd, float 
 	/// </summary>
 	/// <returns>cm_s</returns>
 	// ********************************************************************************
-	float XXIIAutonomeLibClass::calibration() {
+	float XXIIVehiculeLibClass::calibration() {
 		//bool second passage (cycle mesure > MAV > mesure > MAR > mesure > calcul) x2
-		boolean second;
+		bool second;
 		second = false;
 		//Test récup echo indirect
 		int echo_direct;

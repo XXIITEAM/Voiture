@@ -52,4 +52,5 @@
 		float ScanAr(float* capteur_ar_d_cm, float* capteur_ar_c_cm, float* capteur_ar_g_cm);
 
 	};
+	extern XXIISensorLibClass XXIISensorLib;
 #endif

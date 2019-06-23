@@ -96,3 +96,4 @@
 		cm_now = (microsec_final * (331.4 + (0.606 * 20.00) + (0.0124 * 40.00)) / (2 * 10000));
 		return cm_now;
 	}
+	XXIISensorLibClass XXIISensorLib;

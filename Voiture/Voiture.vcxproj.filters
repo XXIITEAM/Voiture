@@ -27,12 +27,24 @@
     <ClInclude Include="Lib\XXIIAutonomeLib\XXIIAutonomeLib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\XXIIEEPROMLib\XXIIEEPROMLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\XXIIBluetoothLib\XXIIBluetoothLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lib\XXIISensorLib\XXIISensorLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Lib\XXIIAutonomeLib\XXIIAutonomeLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\XXIIEEPROMLib\XXIIEEPROMLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\XXIIBluetoothLib\XXIIBluetoothLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
