@@ -70,7 +70,7 @@ float XXIISensorLib::ScanAr(float *capteur_ar_d_cm, float *capteur_ar_c_cm, floa
  */
 float XXIISensorLib::getCM(int trigPin, int echoPin) {
 	float microsec, cm_now, microsec_moy, microsec_final;
-	for (i = 0; i < 10; i++) {
+	for (int i = 0; i < 10; i++) {
 	digitalWrite(trigPin, LOW);
 	delayMicroseconds(2);
 	digitalWrite(trigPin, HIGH);
