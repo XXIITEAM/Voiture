@@ -30,12 +30,13 @@
 *.exe
 *.out
 *.app
-Voiture/__vm/Compile.vmps.xml
 *.xml
 *.buildinfo
 *.elf
 *.hex
+*.buildinfo
+
+#Fodlers
 Voiture/Release/
 Voiture/__vm/
 Voiture/Debug/
-*.buildinfo
