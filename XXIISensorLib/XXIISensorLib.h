@@ -1,4 +1,13 @@
-// XXIISensorLib.h
+/*!
+ * @file XXIISensorLib.h
+ * @brief Librairie voiture arduino
+ * @author XXII-TEAM
+ * @version 0.1
+ * @date 22 juin 2019
+ *
+ * Librairie Arduino voiture commandée par application Android (BTArdroid).
+ *
+ */
 
 #ifndef _XXIISENSORLIB_h
 #define _XXIISENSORLIB_h
@@ -10,7 +19,7 @@
 #endif
 #include <String.h>
 #include <Arduino.h>
-//Définition capteurs_US
+//Définition IO capteurs_US
 //US1 AvG
 #define US1_TRIGGER_PIN  22
 #define US1_ECHO_PIN     23
@@ -35,7 +44,7 @@
 class XXIISensorLib
 {
 private:
-	float getCM(int trigPin, int echoPin, int echoPin2, int echoPin3);
+	float getCM(int trigPin, int echoPin);
 public:
 	XXIISensorLib();
 	float ScanAv(float *capteur_av_g_cm, float *capteur_av_c_cm, float *capteur_av_d_cm);

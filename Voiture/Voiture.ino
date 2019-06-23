@@ -1,9 +1,9 @@
 /*!
- * \file Voiture.ino
- * \brief Programme voiture arduino
- * \author XXII-TEAM
- * \version 0.1
- * \date 22 juin 2019
+ * @file Voiture.ino
+ * @brief Programme voiture arduino
+ * @author XXII-TEAM
+ * @version 0.1
+ * @date 22 juin 2019
  *
  * Programme Arduino voiture commandée par application Android (BTArdroid).
  *
@@ -107,8 +107,8 @@ unsigned long previousMillisTurn = 0;
 unsigned long currentMillis;
 
 /*!
- * \struct optionStruct
- * \brief Structure int.
+ * @struct optionStruct
+ * @brief Structure int.
  *
  * Stockage des paramètres de configuration des distances.
  * Récupéré et mis à jour par BTArdroid
@@ -124,8 +124,8 @@ struct optionStruct {
 };
 optionStruct os_write;
 /*!
- * \struct paramStruct
- * \brief Structure int.
+ * @struct paramStruct
+ * @brief Structure int.
  *
  * Stockage des paramètres de configuration des distances.
  * Récupéré et mis à jour par BTArdroid
@@ -137,11 +137,11 @@ struct paramStuct {
 paramStuct ps_write;
 
 /*!
- * \fn void setup()
- * \brief Fonction Setup.
+ * @fn void setup()
+ * @brief Fonction Setup.
  *
- * \param Aucun.
- * \return Aucun
+ * @param Aucun.
+ * @return Aucun
  */
 void setup() {
 	Serial.begin(115200);
@@ -160,11 +160,11 @@ void setup() {
 }
 
 /*!
- * \fn void loop()
- * \brief Fonction loop.
+ * @fn void loop()
+ * @brief Fonction loop.
  *
- * \param Aucun.
- * \return Aucun
+ * @param Aucun.
+ * @return Aucun
  */
 void loop() {
 	/*commande_recue = readByte();
@@ -211,11 +211,11 @@ void loop() {
 /*..........................................................*/
 
 /*!
- * \fn void waitPairable()
- * \brief Fonction attente BT.
+ * @fn void waitPairable()
+ * @brief Fonction attente BT.
  *
- * \param Aucun.
- * \return Aucun
+ * @param Aucun.
+ * @return Aucun
  */
 void waitPairable() {
 	char recvChar;
@@ -251,11 +251,11 @@ void waitPairable() {
 	}
 }
 /*!
- * \fn void waitConnected()
- * \brief Fonction connexion BT.
+ * @fn void waitConnected()
+ * @brief Fonction connexion BT.
  *
- * \param Aucun.
- * \return Aucun
+ * @param Aucun.
+ * @return Aucun
  */
 void waitConnected() {
 	char recvChar;
@@ -308,11 +308,11 @@ void clearBuffer() {
 /*..........................................................*/
 
 /*!
- * \fn bool writeAT(String cmdAT)
- * \brief Fonction commandes AT BT.
+ * @fn bool writeAT(String cmdAT)
+ * @brief Fonction commandes AT BT.
  *
- * \param String cmdAT.
- * \return Trus/False
+ * @param String cmdAT.
+ * @return Trus/False
  */
 bool writeAT(String cmdAT) {
 	Serial3.println(cmdAT);
@@ -335,11 +335,11 @@ bool testAT() {
 	return writeAT("AT");
 }
 /*!
- * \fn bool writeMsg(String cmd)
- * \brief Fonction envoie messages BT.
+ * @fn bool writeMsg(String cmd)
+ * @brief Fonction envoie messages BT.
  *
- * \param String cmd.
- * \return Aucun
+ * @param String cmd.
+ * @return Aucun
  */
 bool writeMsg(String cmd) {
 	Serial3.println(cmd);
@@ -369,11 +369,11 @@ char readByte() {
 /*..........................................................*/
 
 /*!
- * \fn void ScanUS()
- * \brief Fonction appel scanUS lib XXIISensorLib.
+ * @fn void ScanUS()
+ * @brief Fonction appel scanUS lib XXIISensorLib.
  *
- * \param Aucun
- * \return Lance algoObstacles(avg, avc, avd, arg, arc, ard);
+ * @param Aucun
+ * @return Lance algoObstacles(avg, avc, avd, arg, arc, ard);
  */
 void ScanUS() {
 	float avg, avc, avd, arg, arc, ard;
@@ -383,11 +383,11 @@ void ScanUS() {
 }
 
 /*!
- * \fn void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
- * \brief Fonction comportement si obstacle.
+ * @fn void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
+ * @brief Fonction comportement si obstacle.
  *
- * \param float avg, float avc, float avd, float arg, float arc, float ard
- * \return Aucun
+ * @param float avg, float avc, float avd, float arg, float arc, float ard
+ * @return Aucun
  */
 void algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard) {
 	//Tableau distances
@@ -457,11 +457,11 @@ void algoObstacles(float avg, float avc, float avd, float arg, float arc, float 
 
 }
 /*!
- * \fn void decouverte()
- * \brief Fonction découverte environnement.
+ * @fn void decouverte()
+ * @brief Fonction découverte environnement.
  *
- * \param Aucun
- * \return Aucun
+ * @param Aucun
+ * @return Aucun
  */
 void decouverte() {
 	long departMillis, stopMillis, execTime;
@@ -487,12 +487,12 @@ void decouverte() {
 }
 
 /*!
- * \fn float calibration()
- * \brief Fonction calibration vitesse vh (cm/s)
+ * @fn float calibration()
+ * @brief Fonction calibration vitesse vh (cm/s)
  * Placer le véhicule face à un mur (1 ou 2 m)
  *
- * \param Aucun
- * \return cm_s
+ * @param Aucun
+ * @return cm_s
  */
 float calibration() {
 	//bool second passage (cycle mesure > MAV > mesure > MAR > mesure > calcul) x2
@@ -559,11 +559,11 @@ float calibration() {
 /*..........................................................*/
 
 /*!
- * \fn void traitementMessage(char commande_a_traiter)
- * \brief Fonction traitement du message reçu (BTArduino)
+ * @fn void traitementMessage(char commande_a_traiter)
+ * @brief Fonction traitement du message reçu (BTArduino)
  *
- * \param char commande_a_traiter
- * \return Aucun
+ * @param char commande_a_traiter
+ * @return Aucun
  */
 void traitementMessage(char commande_a_traiter) {
 	switch (commande_a_traiter)
@@ -676,11 +676,11 @@ void leftForward() {
 /*..........................................................*/
 
 /*!
- * \fn void optDist()
- * \brief Envoi des parametres (Distances zones) a BTArduino
+ * @fn void optDist()
+ * @brief Envoi des parametres (Distances zones) a BTArduino
  *
- * \param Aucun
- * \return Aucun
+ * @param Aucun
+ * @return Aucun
  */
 void optDist() {
 	chargerParametres();
@@ -695,11 +695,11 @@ void optDist() {
 }
 
 /*!
- * \fn void traitementOptions(char cmd)
- * \brief Traitement du String parametres reçu de BTArduino
+ * @fn void traitementOptions(char cmd)
+ * @brief Traitement du String parametres reçu de BTArduino
  *
- * \param char cmd
- * \return Aucun
+ * @param char cmd
+ * @return Aucun
  */
 void traitementOptions(char cmd) {
 	String cmdStr = "";
@@ -734,11 +734,11 @@ void traitementOptions(char cmd) {
 /*..........................................................*/
 
 /*!
- * \fn void listingBT()
- * \brief Envoie des données capteurs a BTArduino
+ * @fn void listingBT()
+ * @brief Envoie des données capteurs a BTArduino
  *
- * \param Aucun
- * \return Aucun
+ * @param Aucun
+ * @return Aucun
  */
 void listingBT() {
 	float cmMsec = 12.0;
@@ -754,11 +754,11 @@ void listingBT() {
 /*..........................................................*/
 
 /*!
- * \fn void sauvegardeParametres()
- * \brief Sauvegarde des parametres utilisateurs de tableau parametres vers EEPROM
+ * @fn void sauvegardeParametres()
+ * @brief Sauvegarde des parametres utilisateurs de tableau parametres vers EEPROM
  *
- * \param Aucun
- * \return Aucun
+ * @param Aucun
+ * @return Aucun
  */
 void sauvegardeParametres() {
 	os_write.magic = STRUCT_MAGIC;
@@ -772,11 +772,11 @@ void sauvegardeParametres() {
 }
 
 /*!
- * \fn void chargerParametres()
- * \brief Chargement des parametres utilisateurs de EEPROM vers tableau de parametres
+ * @fn void chargerParametres()
+ * @brief Chargement des parametres utilisateurs de EEPROM vers tableau de parametres
  *
- * \param Aucun
- * \return Aucun
+ * @param Aucun
+ * @return Aucun
  */
 void chargerParametres() {
 	Serial.println("charger param");
@@ -799,11 +799,11 @@ void chargerParametres() {
 }
 
 /*!
- * \fn void updateTableauParam()
- * \brief Mise à jour du tableau de parametres a partir de EEPROM
+ * @fn void updateTableauParam()
+ * @brief Mise à jour du tableau de parametres a partir de EEPROM
  *
- * \param Aucun
- * \return Aucun
+ * @param Aucun
+ * @return Aucun
  */
 void updateTableauParam() {
 	Serial.println("update tab param");
@@ -815,11 +815,11 @@ void updateTableauParam() {
 }
 
 /*!
- * \fn String temperature()
- * \brief Récupération temperature et humidite pour envoie vers BTArdroid
+ * @fn String temperature()
+ * @brief Récupération temperature et humidite pour envoie vers BTArdroid
  *
- * \param Aucun
- * \return String th
+ * @param Aucun
+ * @return String th
  */
 String temperature() {
 	float h = dht.readHumidity();
