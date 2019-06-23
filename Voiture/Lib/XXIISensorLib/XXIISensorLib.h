@@ -19,6 +19,7 @@
 #endif
 #include <String.h>
 #include <Arduino.h>
+
 //Définition IO capteurs_US
 //US1 AvG
 #define US1_TRIGGER_PIN  22
@@ -41,15 +42,14 @@
 
 #define CYCLE_DISTANCE        500
 #pragma once
-class XXIISensorLib
-{
-private:
-	float getCM(int trigPin, int echoPin);
-public:
-	XXIISensorLib();
-	float ScanAv(float *capteur_av_g_cm, float *capteur_av_c_cm, float *capteur_av_d_cm);
-	float ScanAr(float *capteur_ar_d_cm, float *capteur_ar_c_cm, float *capteur_ar_g_cm);
+	class XXIISensorLibClass
+	{
+	private:
+		float getCM(int trigPin, int echoPin);
+	public:
+		void init();
+		float ScanAv(float* capteur_av_g_cm, float* capteur_av_c_cm, float* capteur_av_d_cm);
+		float ScanAr(float* capteur_ar_d_cm, float* capteur_ar_c_cm, float* capteur_ar_g_cm);
 
-};
+	};
 #endif
-

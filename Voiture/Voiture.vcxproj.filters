@@ -18,8 +18,22 @@
     <None Include="Voiture.ino" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Lib\XXIISensorLib\XXIISensorLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="__vm\.Voiture.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lib\XXIIAutonomeLib\XXIIAutonomeLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Lib\XXIISensorLib\XXIISensorLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\XXIIAutonomeLib\XXIIAutonomeLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
