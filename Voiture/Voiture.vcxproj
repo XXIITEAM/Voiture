@@ -127,17 +127,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Lib\XXIIAutonomeLib\XXIIAutonomeLib.h" />
     <ClInclude Include="Lib\XXIIBluetoothLib\XXIIBluetoothLib.h" />
     <ClInclude Include="Lib\XXIIEEPROMLib\XXIIEEPROMLib.h" />
     <ClInclude Include="Lib\XXIISensorLib\XXIISensorLib.h" />
+    <ClInclude Include="Lib\XXIIVehiculeLib\XXIIVehiculeLib.h" />
     <ClInclude Include="__vm\.Voiture.vsarduino.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Lib\XXIIAutonomeLib\XXIIAutonomeLib.cpp" />
     <ClCompile Include="Lib\XXIIBluetoothLib\XXIIBluetoothLib.cpp" />
     <ClCompile Include="Lib\XXIIEEPROMLib\XXIIEEPROMLib.cpp" />
     <ClCompile Include="Lib\XXIISensorLib\XXIISensorLib.cpp" />
+    <ClCompile Include="Lib\XXIIVehiculeLib\XXIIVehiculeLib.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
