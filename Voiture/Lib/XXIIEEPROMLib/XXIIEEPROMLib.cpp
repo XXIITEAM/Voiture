@@ -9,7 +9,6 @@ void XXIIEEPROMLibClass::init()
 
 }
 
-//XXIIBluetoothLibClass bluetoothEEPROM;
 // ********************************************************************************
 	/// <summary>
 	/// @fn void sauvegardeParametres()

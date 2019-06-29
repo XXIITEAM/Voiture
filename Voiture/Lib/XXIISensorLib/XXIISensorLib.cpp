@@ -1,6 +1,5 @@
 // --------------------------------------------------------------------------------
 /// <summary>
-/// !
 /// @file XXIISensorLib.cpp
 /// @brief Librairie voiture arduino
 /// @author XXII-TEAM
@@ -15,7 +14,6 @@
 
 	// ********************************************************************************
 /// <summary>
-/// !
 /// @fn XXIISensorLib::XXIISensorLib()
 /// @brief Fonction Setup.
 /// </summary>
@@ -39,7 +37,6 @@
 	}
 	// ********************************************************************************
 	/// <summary>
-	/// !
 	/// @fn float XXIISensorLib::ScanAv(float *capteur_av_g_cm, float *capteur_av_c_cm, float *capteur_av_d_cm)
 	/// @brief Fonction Scan avant ultrason, l'appel se fait : Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d); &VARIABLE = récupération du contenu du pointeur.
 	/// </summary>
@@ -56,7 +53,6 @@
 
 	// ********************************************************************************
 	/// <summary>
-	/// !
 	/// @fn float XXIISensorLib::ScanAr(float *capteur_ar_d_cm, float *capteur_ar_c_cm, float *capteur_ar_g_cm)
 	/// @brief Fonction Setup.
 	/// </summary>
@@ -73,7 +69,6 @@
 
 	// ********************************************************************************
 	/// <summary>
-	/// !
 	/// @fn float XXIISensorLib::getCM(int trigPin, int echoPin)
 	/// @brief Fonction getCM, récupération distance + moyenne sur 10 resultats.
 	/// </summary>

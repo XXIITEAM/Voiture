@@ -41,7 +41,7 @@ public:
 
 	unsigned long magic;
 	int zone_1_min, zone_2_min, zone_3_min, zone_4_min, zone_4_max;
-	// --------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 /// <summary>
 /// @struct paramStruct
 /// @brief Structure int.
