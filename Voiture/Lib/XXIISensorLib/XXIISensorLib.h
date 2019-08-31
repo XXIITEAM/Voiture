@@ -41,12 +41,21 @@
 
 #define CYCLE_DISTANCE        500
 #pragma once
+
+struct SensorDist {
+	int capteurSource;
+	int capteurRecept;
+	float distCm;
+};
+SensorDist sd_write;
+
 class XXIISensorLib
 {
 private:
 	float getCM(int trigPin, int echoPin);
 public:
 	XXIISensorLib();
+	float Scan(struct SensorDist *sd_write);
 	float ScanAv(float *capteur_av_g_cm, float *capteur_av_c_cm, float *capteur_av_d_cm);
 	float ScanAr(float *capteur_ar_d_cm, float *capteur_ar_c_cm, float *capteur_ar_g_cm);
 

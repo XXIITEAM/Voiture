@@ -35,6 +35,27 @@ XXIISensorLib::XXIISensorLib()
 	pinMode(US6_ECHO_PIN, INPUT);
 
 }
+float XXIISensorLib::Scan(struct SensorDist *sd_write) {
+	struct SensorDist sd_write;
+
+	float microsec, cm_now, microsec_moy, microsec_final;
+	for (int i = 0; i < 10; i++) {
+		digitalWrite(sd_write->capteurSource, LOW);
+		delayMicroseconds(2);
+		digitalWrite(sd_write->capteurSource, HIGH);
+		delayMicroseconds(10);
+		digitalWrite(sd_write->capteurSource, LOW);
+		float microsecondes = microsec();
+		int echoPin US1_ECHO_PIN;
+		while (microsec() - microsecondes <= 5) {
+			microsec = pulseIn(echoPin, HIGH);
+		}
+		
+		microsec_moy = microsec_moy + microsec;
+	}
+	microsec_final = microsec_moy / 10;
+	sd_write.distCm = (microsec_final * (331.4 + (0.606 * 20.00) + (0.0124 * 40.00)) / (2 * 10000));
+}
 /*!
  * @fn float XXIISensorLib::ScanAv(float *capteur_av_g_cm, float *capteur_av_c_cm, float *capteur_av_d_cm)
  * @brief Fonction Scan avant ultrason, l'appel se fait : Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d); &VARIABLE = récupération du contenu du pointeur.

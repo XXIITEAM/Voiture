@@ -203,7 +203,20 @@ void loop() {
 		previousMillisDIST = currentMillis;
 	}
 
+	
+}
 
+void testScan() {
+	for (int i = 1; i < 6; i++) {
+	sd_write.capteurSource = i;
+	Sensor.Scan(&sd_write);
+	Serial.print("Capteur source : ");
+	Serial.println(sd_write.capteurSource);
+	Serial.print("Capteur reception : ");
+	Serial.println(sd_write.capteurRecept);
+	Serial.print("Distance : ");
+	Serial.println(sd_write.distCm);
+	}
 }
 /*..........................................................*/
 /*..........................................................*/
