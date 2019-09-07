@@ -67,6 +67,9 @@
 		*capteur_ar_g_cm = getCM(US6_TRIGGER_PIN, US6_ECHO_PIN);
 	}
 
+	void XXIISensorLibClass::Scan() {
+		
+	}
 	// ********************************************************************************
 	/// <summary>
 	/// @fn float XXIISensorLib::getCM(int trigPin, int echoPin)
@@ -78,17 +81,17 @@
 	// ********************************************************************************
 	float XXIISensorLibClass::getCM(int trigPin, int echoPin) {
 		float microsec, cm_now, microsec_moy, microsec_final;
-		for (int i = 0; i < 10; i++) {
+		//for (int i = 0; i < 10; i++) {
 			digitalWrite(trigPin, LOW);
 			delayMicroseconds(2);
 			digitalWrite(trigPin, HIGH);
 			delayMicroseconds(10);
 			digitalWrite(trigPin, LOW);
 			microsec = pulseIn(echoPin, HIGH);
-			microsec_moy = microsec_moy + microsec;
-		}
-		microsec_final = microsec_moy / 10;
-		cm_now = (microsec_final * (331.4 + (0.606 * 20.00) + (0.0124 * 40.00)) / (2 * 10000));
+			//microsec_moy = microsec_moy + microsec;
+		//}
+		//microsec_final = microsec_moy / 10;
+		cm_now = (microsec * (331.4 + (0.606 * 20.00) + (0.0124 * 40.00)) / (2 * 10000));
 		return cm_now;
 	}
 	XXIISensorLibClass XXIISensorLib;

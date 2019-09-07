@@ -42,13 +42,15 @@
 class XXIIBluetoothLibClass
 {
  protected:
-	 char commande_precedente = 'I';
-	 char commande_recue;
-	 char CMD_VIDE = NULL;
+	
+	 
+	 
 	 
 
  public:
-	 
+	 char CMD_VIDE = NULL;
+	 char commande_recue;
+	 char commande_precedente = 'I';
 	 const unsigned long TEMPO_BT = 500;
 	 unsigned long previousMillisBT = 0;
 	 int8_t status;

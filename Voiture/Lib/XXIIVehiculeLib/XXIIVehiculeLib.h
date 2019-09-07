@@ -29,7 +29,10 @@ struct paramStuct {
 class XXIIVehiculeLibClass
 {
 private:
+	float currentMillis;
+	float previousMillisDIST;
 	//float getCM(int trigPin, int echoPin);
+	
 public:
 	//Etats
 
@@ -60,6 +63,7 @@ public:
 	void XXIIVehiculeLibClass::rightForward();
 	void XXIIVehiculeLibClass::traitementMessage(char commande_a_traiter);
 	void XXIIVehiculeLibClass::optDist();
+	void XXIIVehiculeLibClass::autonome();
 
 };
 extern XXIIVehiculeLibClass XXIIVehiculeLib;

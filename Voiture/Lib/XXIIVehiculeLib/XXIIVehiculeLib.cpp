@@ -27,14 +27,15 @@ void XXIIVehiculeLibClass::ScanUS()
 /// <param name="ard">Distance capteur arrière droit</param>
 // ********************************************************************************
 
-void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float arg, float arc, float ard)
+void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float ard, float arc, float arg)
 {
 	XXIIEEPROMLib.getEEPROMParam(&zone_1_min, &zone_2_min, &zone_3_min, &zone_4_min, &zone_4_max);
 	//Tableau distances
-	float tabDistances[6] = { avg, avc, avd, arg, arc, ard };
+	float tabDistances[6] = { avg, avc, avd, ard, arc, arg };
 	//Tableau niveaux d'alerte
 	int tabAlerte[6];
 
+	motordriver.goForward();
 	//Attribution du niveau d'alerte
 	for (int i = 0; i < 6; i++) {
 		if ((tabDistances[i] > zone_4_max)) {
@@ -52,7 +53,7 @@ void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float 
 		if ((tabDistances[i] <= zone_2_min) && (tabDistances[i] > zone_1_min)) {
 			tabAlerte[i] = NV_ALERTE_5;
 		}
-		if ((tabDistances[i] <= zone_1_min)) {
+		if ((tabDistances[i] <= zone_1_min && tabDistances[i])) {
 			tabAlerte[i] = 22.00;
 		}
 		if (tabAlerte[i] > NV_ALERTE_3) {
@@ -61,9 +62,11 @@ void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float 
 			Serial.print("Alerte level : ");
 			Serial.println(tabAlerte[i]);
 		}
+		Serial.print("Distance : ");
+		Serial.println(tabDistances[i]);
 	}
 	//Si distance min d'un des 6 capteurs < 50.00 cm on agit sinon on continue
-	if (min(tabDistances[0], min(tabDistances[1], min(tabDistances[2], min(tabDistances[3], min(tabDistances[4], tabDistances[5]))))) < float(50)) {
+	/*if (min(tabDistances[0], min(tabDistances[1], min(tabDistances[2], min(tabDistances[3], min(tabDistances[4], tabDistances[5]))))) < float(50)) {
 		Serial.println("Entrée dans -50cm");
 		if (tabAlerte[0] > NV_ALERTE_4 || tabAlerte[1] > NV_ALERTE_4 || tabAlerte[2] > NV_ALERTE_4) {
 			//Alerte face
@@ -80,6 +83,11 @@ void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float 
 			boolForward = true;
 			boolStop = false;
 			boolBackward = false;
+			currentMillis = millis();
+			motordriver.goLeft();
+			while ( previousMillisDIST - currentMillis <= 500) {
+				previousMillisDIST = millis();
+			}
 			motordriver.goForward();
 		}
 		else {
@@ -87,10 +95,10 @@ void XXIIVehiculeLibClass::algoObstacles(float avg, float avc, float avd, float 
 				boolForward = false;
 				boolStop = true;
 				boolBackward = false;
-				motordriver.stop();
+				motordriver.goForward();
 			}
 		}
-	}
+	}*/
 }
 
 // ********************************************************************************
@@ -239,30 +247,30 @@ void XXIIVehiculeLibClass::traitementMessage(char commande_a_traiter) {
 			rightForward();
 			motordriver.setSpeed(speed0, MOTORB);
 			break;*/
-	/*case CMD_LEFT_FORWARD:
-		boolForward = true;
-		boolStop = false;
-		boolBackward = false;
-		motordriver.goForward();
-		leftForward();
-		motordriver.setSpeed(vehicule.speed0, MOTORA);
-		break;
-	case CMD_RIGHT_BACK:
-		boolForward = false;
-		boolStop = false;
-		boolBackward = true;
-		motordriver.goBackward();
-		rightForward();
-		motordriver.setSpeed(speed0, MOTORB);
-		break;
-	case CMD_LEFT_BACK:
-		boolForward = false;
-		boolStop = false;
-		boolBackward = true;
-		motordriver.goBackward();
-		leftForward();
-		motordriver.setSpeed(speed0, MOTORA);
-		break;*/
+			/*case CMD_LEFT_FORWARD:
+				boolForward = true;
+				boolStop = false;
+				boolBackward = false;
+				motordriver.goForward();
+				leftForward();
+				motordriver.setSpeed(vehicule.speed0, MOTORA);
+				break;
+			case CMD_RIGHT_BACK:
+				boolForward = false;
+				boolStop = false;
+				boolBackward = true;
+				motordriver.goBackward();
+				rightForward();
+				motordriver.setSpeed(speed0, MOTORB);
+				break;
+			case CMD_LEFT_BACK:
+				boolForward = false;
+				boolStop = false;
+				boolBackward = true;
+				motordriver.goBackward();
+				leftForward();
+				motordriver.setSpeed(speed0, MOTORA);
+				break;*/
 	case CMD_RIGHT_FRONT:
 		boolForward = true;
 		boolStop = false;
@@ -314,6 +322,30 @@ void XXIIVehiculeLibClass::traitementMessage(char commande_a_traiter) {
 	default:
 		break;
 	}
-	return;
+}
+
+
+
+void XXIIVehiculeLibClass::autonome() {
+	float avg, avc, avd, ard, arc, arg;
+
+	XXIISensorLib.ScanAv(&avg,&avc,&avd);
+	XXIISensorLib.ScanAr(&ard, &arc, &arg);
+	Serial.print("Distance AV : ");
+	Serial.println((String)"Avg : "+avg+" || Avc : "+ avc+" || Avd : "+avd);
+	Serial.print("Distance AR : ");
+	Serial.println((String)"Ard : " + ard + " || Arc : " + arc + " || Arg : " + arg);
+	if (avg < 30.00 && avc < 30.00 && avd < 30.00) {
+		motordriver.goBackward();
+	}
+	if (ard < 30.00 && arc < 30.00 && arg < 30.00){
+		motordriver.goLeft();
+	}
+	else
+	{
+		motordriver.goForward();
+	}
+
+	
 }
 XXIIVehiculeLibClass XXIIVehiculeLib;

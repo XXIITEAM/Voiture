@@ -16,6 +16,7 @@
 #include <String.h>
 #include <stdlib.h>
 #include <DHT.h>
+#include "Lib\XXIIBluetoothLib\XXIIBluetoothLib.h"
 
 #define CAR_STOP 0
 #define CAR_FORWARD 1
@@ -58,8 +59,8 @@ void setup() {
 	motordriver.setSpeed(100, MOTORA);
 	motordriver.setSpeed(100, MOTORB);
 	XXIIEEPROMLib.chargerParametres(&XXIIVehiculeLib.magic, &XXIIVehiculeLib.zone_1_min, &XXIIVehiculeLib.zone_2_min, &XXIIVehiculeLib.zone_3_min, &XXIIVehiculeLib.zone_4_min, &XXIIVehiculeLib.zone_4_max);
-	XXIIBluetoothLib.waitPairable();
-	XXIIBluetoothLib.waitConnected();
+	//XXIIBluetoothLib.waitPairable();
+	//XXIIBluetoothLib.waitConnected();
 		
 	XXIIVehiculeLib.mode = "M";
 	//dht.begin();
@@ -72,42 +73,44 @@ void setup() {
 /// </summary>
 // ********************************************************************************
 void loop() {
-	/*commande_recue = readByte();
-	if (getStatus() == PAIRABLE) {
+	float dist_av_g, dist_av_c, dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g;
+	XXIIVehiculeLib.autonome();
+	/*XXIIBluetoothLib.commande_recue = XXIIBluetoothLib.readByte();
+	if (XXIIBluetoothLib.getStatus() == PAIRABLE) {
 		motordriver.stop();
-		waitConnected();
+		XXIIBluetoothLib.waitConnected();
 	}
 	currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= TEMPO_DIST) {
-		Sensor.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
+		XXIISensorLib.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
 		previousMillisDIST = currentMillis;
 
 	}
-	if (mode != "A" || commande_recue == 'M') {
-		if (commande_recue != CMD_INVALID || commande_recue != CMD_TEMP || commande_recue != CMD_VIDE) {
-			if (commande_recue != commande_precedente) {
-				commande_precedente = commande_recue;
-				traitementMessage(commande_recue);
+	if (XXIIVehiculeLib.mode != "A" || XXIIBluetoothLib.commande_recue == 'M') {
+		if (XXIIBluetoothLib.commande_recue != CMD_INVALID || XXIIBluetoothLib.commande_recue != CMD_TEMP || XXIIBluetoothLib.commande_recue != XXIIBluetoothLib.CMD_VIDE) {
+			if (XXIIBluetoothLib.commande_recue !=XXIIBluetoothLib.commande_precedente) {
+				XXIIBluetoothLib.commande_precedente = XXIIBluetoothLib.commande_recue;
+				XXIIVehiculeLib.traitementMessage(XXIIBluetoothLib.commande_recue);
 			}
-			commande_precedente = commande_recue;
+			
 		}
 	}
 	else {
-		US_scan_Av;
-		US_scan_Ar;
-		autonome();
+		XXIISensorLib.ScanAv(&dist_av_g, &dist_av_c, &dist_av_d);
+		XXIISensorLib.ScanAr(&dist_ar_d, &dist_ar_c, &dist_ar_g);
+		XXIIVehiculeLib.algoObstacles(dist_av_g,dist_av_c,dist_av_d, dist_ar_d, dist_ar_c, dist_ar_g);
 		delay(500);
 	}*/
-	currentMillis = millis();
+	/*currentMillis = millis();
 	if (currentMillis - previousMillisDIST >= 500) {
 		if (XXIIVehiculeLib.boolCalib == false) {
 			Serial.println(XXIIVehiculeLib.calibration());
 		}
 
 		previousMillisDIST = currentMillis;
-	}
+	}*/
 
-
+	//Serial.println(XXIISensorLib.Scan());
 }
 /*..........................................................*/
 

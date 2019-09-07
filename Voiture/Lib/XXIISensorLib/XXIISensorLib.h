@@ -50,7 +50,7 @@
 		void init();
 		float ScanAv(float* capteur_av_g_cm, float* capteur_av_c_cm, float* capteur_av_d_cm);
 		float ScanAr(float* capteur_ar_d_cm, float* capteur_ar_c_cm, float* capteur_ar_g_cm);
-
+		void Scan();
 	};
 	extern XXIISensorLibClass XXIISensorLib;
 #endif
