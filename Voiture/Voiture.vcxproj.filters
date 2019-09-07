@@ -18,10 +18,23 @@
     <None Include="Voiture.ino" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Lib\XXIISensorLib\XXIISensorLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="__vm\.Voiture.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Lib\XXIISensorLib\XXIISensorLib.h">
+=======
+    <ClInclude Include="Lib\XXIIEEPROMLib\XXIIEEPROMLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\XXIIBluetoothLib\XXIIBluetoothLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lib\XXIIVehiculeLib\XXIIVehiculeLib.h">
+>>>>>>> V1_Lib
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -29,5 +42,17 @@
     <ClCompile Include="Lib\XXIISensorLib\XXIISensorLib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+<<<<<<< HEAD
+=======
+    <ClCompile Include="Lib\XXIIEEPROMLib\XXIIEEPROMLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\XXIIBluetoothLib\XXIIBluetoothLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Lib\XXIIVehiculeLib\XXIIVehiculeLib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+>>>>>>> V1_Lib
   </ItemGroup>
 </Project>
