@@ -2,7 +2,7 @@
 
 void XXIIVehiculeLibClass::init()
 {
-	uint8_t speed0 = 100;
+	uint8_t speed0 = 200;
 
 }
 
@@ -338,9 +338,9 @@ void XXIIVehiculeLibClass::autonome() {
 	if (avg < 30.00 && avc < 30.00 && avd < 30.00) {
 		motordriver.goBackward();
 	}
-	if (ard < 30.00 && arc < 30.00 && arg < 30.00){
+	/*if (ard < 30.00 && arc < 30.00 && arg < 30.00){
 		motordriver.goLeft();
-	}
+	}*/
 	else
 	{
 		motordriver.goForward();

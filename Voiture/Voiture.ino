@@ -56,8 +56,8 @@ void setup() {
 	XXIIBluetoothLib.s_connected = "CONNECTED";
 	XXIIBluetoothLib.status = 0;
 	motordriver.init();
-	motordriver.setSpeed(100, MOTORA);
-	motordriver.setSpeed(100, MOTORB);
+	motordriver.setSpeed(200, MOTORA);
+	motordriver.setSpeed(200, MOTORB);
 	XXIIEEPROMLib.chargerParametres(&XXIIVehiculeLib.magic, &XXIIVehiculeLib.zone_1_min, &XXIIVehiculeLib.zone_2_min, &XXIIVehiculeLib.zone_3_min, &XXIIVehiculeLib.zone_4_min, &XXIIVehiculeLib.zone_4_max);
 	//XXIIBluetoothLib.waitPairable();
 	//XXIIBluetoothLib.waitConnected();
